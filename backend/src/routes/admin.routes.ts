@@ -76,7 +76,7 @@ const categorySchema = z.object({
 router.post('/categories', async (req, res, next) => {
   try {
     const data = categorySchema.parse(req.body);
-    const cat = await prisma.category.create({ data });
+    const cat = await prisma.category.create({ data: data as any });
     res.status(201).json(cat);
   } catch (e) { next(e); }
 });
@@ -84,7 +84,7 @@ router.post('/categories', async (req, res, next) => {
 router.put('/categories/:id', async (req, res, next) => {
   try {
     const data = categorySchema.partial().parse(req.body);
-    const cat = await prisma.category.update({ where: { id: req.params.id }, data });
+    const cat = await prisma.category.update({ where: { id: req.params.id }, data: data as any });
     res.json(cat);
   } catch (e) { next(e); }
 });
@@ -115,7 +115,7 @@ const productSchema = z.object({
 router.post('/products', async (req, res, next) => {
   try {
     const data = productSchema.parse(req.body);
-    const product = await prisma.product.create({ data });
+    const product = await prisma.product.create({ data: data as any });
     res.status(201).json(product);
   } catch (e) { next(e); }
 });
@@ -123,7 +123,7 @@ router.post('/products', async (req, res, next) => {
 router.put('/products/:id', async (req, res, next) => {
   try {
     const data = productSchema.partial().parse(req.body);
-    const product = await prisma.product.update({ where: { id: req.params.id }, data });
+    const product = await prisma.product.update({ where: { id: req.params.id }, data: data as any });
     res.json(product);
   } catch (e) { next(e); }
 });
@@ -153,7 +153,7 @@ router.post('/news', async (req, res, next) => {
       data: {
         ...data,
         publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date(),
-      },
+      } as any,
     });
     // Auto-broadcast push when publishing news
     broadcastPush({
@@ -188,13 +188,13 @@ router.post('/masterclass', async (req, res, next) => {
   try {
     const data = masterclassSchema.parse(req.body);
     const mc = await prisma.masterclass.create({
-      data: {
-        ...data,
-        date: new Date(data.date),
-        endDate: data.endDate ? new Date(data.endDate) : null,
-        spotsAvailable: data.capacity,
-      },
-    });
+  data: {
+    ...data,
+    date: new Date(data.date),
+    endDate: data.endDate ? new Date(data.endDate) : null,
+    spotsAvailable: data.capacity,
+  } as any,
+});
     res.status(201).json(mc);
   } catch (e) { next(e); }
 });

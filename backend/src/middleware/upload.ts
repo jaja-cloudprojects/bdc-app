@@ -21,7 +21,8 @@ export const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = /jpeg|jpg|png|webp|gif|pdf|doc|docx|xls|xlsx/;
     const ok = allowed.test(path.extname(file.originalname).toLowerCase());
-    cb(ok ? null : new Error('Unsupported file type'), ok);
+    if (ok) cb(null, true);
+      else cb(new Error('Unsupported file type'));
   },
 });
 
