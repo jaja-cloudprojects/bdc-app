@@ -1,0 +1,173 @@
+// Prisma schema for Beauté du Cil backend
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum Platform {
+  ios
+  android
+}
+
+enum MessageRole {
+  USER
+  BOT
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  role          Role     @default(STUDENT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pushTokens    PushToken[]
+  conversations Conversation[]
+  reservations  Reservation[]
+  documents     Document[]
+
+  @@index([email])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  platform  Platform
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  imageUrl    String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  products    Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  price       Float
+  currency    String    @default("EUR")
+  imageUrl    String?
+  gallery     String[]  @default([])
+  isNew       Boolean   @default(false)
+  inStock     Boolean   @default(true)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([isNew])
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  body        String?
+  imageUrl    String?
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([publishedAt])
+}
+
+model Masterclass {
+  id              String        @id @default(cuid())
+  title           String
+  description     String?
+  location        String?
+  date            DateTime
+  endDate         DateTime?
+  capacity        Int           @default(10)
+  spotsAvailable  Int           @default(10)
+  createdAt       DateTime      @default(now())
+  reservations    Reservation[]
+
+  @@index([date])
+}
+
+model Reservation {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  masterclassId String
+  masterclass   Masterclass @relation(fields: [masterclassId], references: [id], onDelete: Cascade)
+  status        String      @default("CONFIRMED")
+  createdAt     DateTime    @default(now())
+
+  @@unique([userId, masterclassId])
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  title      String
+  category   String   @default("general")
+  fileUrl    String
+  fileType   String
+  fileSize   Int
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadedAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  attachments    Json?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  data      Json?
+  sentTo    Int      @default(0)
+  createdAt DateTime @default(now())
+}

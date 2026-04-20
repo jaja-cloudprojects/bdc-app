@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bdc_user
+      POSTGRES_PASSWORD: bdc_password
+      POSTGRES_DB: bdc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - bdc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bdc_user -d bdc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://bdc_user:bdc_password@db:5432/bdc_db?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-prod}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-change-in-prod}
+      CORS_ORIGIN: "*"
+      PUBLIC_BASE_URL: http://localhost:4000
+      PORT: 4000
+      NODE_ENV: production
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@beauteducil.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMeNow!}
+    ports:
+      - "4000:4000"
+    volumes:
+      - bdc_uploads:/app/uploads
+
+volumes:
+  bdc_pgdata:
+  bdc_uploads:
