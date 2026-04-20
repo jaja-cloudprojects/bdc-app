@@ -22,7 +22,7 @@ export const upload = multer({
     const allowed = /jpeg|jpg|png|webp|gif|pdf|doc|docx|xls|xlsx/;
     const ok = allowed.test(path.extname(file.originalname).toLowerCase());
     if (ok) cb(null, true);
-      else cb(new Error('Unsupported file type'));
+    else cb(new Error('Unsupported file type'));
   },
 });
 
