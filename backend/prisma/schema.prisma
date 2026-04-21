@@ -1,9 +1,6 @@
 // Prisma schema for Beauté du Cil backend
 // Run: npx prisma migrate dev --name init
 
-generator client {
-  provider = "prisma-client-js"
-}
 
 datasource db {
   provider = "postgresql"
