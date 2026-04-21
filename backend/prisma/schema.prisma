@@ -4,7 +4,7 @@
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("postgresql://postgres:nWaTbrfuyhxlSOAJIzioFwwzHIMpfNkA@postgres.railway.internal:5432/bdc_db")
 }
 
 enum Role {
