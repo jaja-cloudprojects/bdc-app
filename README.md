@@ -12,7 +12,7 @@ bdc-app/
 └── docker-compose.yml   Stack locale complète (DB + API)
 ```
 
-## Démarrage rapide (5 minutes)
+## Démarrage rapide 
 
 ### Prérequis
 - Node.js ≥ 20
