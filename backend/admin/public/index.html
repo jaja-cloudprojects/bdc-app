@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BDC Admin</title>
+
   <style>
     :root {
       --bg: #0A0A0A;
@@ -16,426 +17,243 @@
       --green: #4CAF50;
       --red: #EF5350;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
     }
+
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
     h1 { font-family: Georgia, serif; margin-bottom: 24px; letter-spacing: 1px; }
     h2 { margin: 24px 0 12px; font-size: 18px; }
+
     nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+
     nav button {
-      background: var(--card); color: var(--text); border: 1px solid var(--border);
-      padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
     }
+
     nav button.active { background: var(--pink); border-color: var(--pink); }
+
     .card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 20px; margin-bottom: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
     }
+
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-    .stat-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-    .stat-value { font-size: 32px; font-weight: bold; margin-top: 4px; }
+
+    .stat-label { color: var(--muted); font-size: 12px; }
+    .stat-value { font-size: 32px; font-weight: bold; }
+
     input, textarea, select {
-      width: 100%; background: var(--bg); color: var(--text);
-      border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-      font-size: 14px; font-family: inherit; margin-bottom: 10px;
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 10px;
     }
-    textarea { resize: vertical; min-height: 80px; }
-    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+    textarea { min-height: 80px; }
+
     button.primary {
-      background: var(--pink); color: white; border: none;
-      padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;
+      background: var(--pink);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
     }
-    button.ghost {
-      background: transparent; color: var(--text); border: 1px solid var(--border);
-      padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+
+    button.danger {
+      background: var(--red);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
     }
-    button.danger { background: var(--red); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
-    th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    th { color: var(--muted); font-size: 12px; }
+
     .hidden { display: none; }
-    .msg { padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
-    .msg.ok { background: rgba(76, 175, 80, 0.15); color: var(--green); }
-    .msg.err { background: rgba(239, 83, 80, 0.15); color: var(--red); }
-    #login { max-width: 400px; margin: 60px auto; }
-    .logo { text-align: center; font-family: Georgia, serif; font-size: 24px; letter-spacing: 2px; margin-bottom: 8px; }
-    .sub { text-align: center; color: var(--muted); font-size: 11px; letter-spacing: 3px; margin-bottom: 32px; }
   </style>
 </head>
+
 <body>
 
+<!-- LOGIN -->
 <div id="login" class="card">
-  <div class="logo">BEAUTÉ DU CIL</div>
-  <div class="sub">A D M I N</div>
-  <div id="loginMsg"></div>
-  <label>Email</label>
-  <input id="loginEmail" type="email" placeholder="admin@beauteducil.com" />
-  <label>Mot de passe</label>
-  <input id="loginPw" type="password" />
-  <button class="primary" style="width:100%" onclick="login()">Connexion</button>
+  <h2>Connexion</h2>
+  <input id="loginEmail" type="email" placeholder="email" />
+  <input id="loginPw" type="password" placeholder="mot de passe" />
+  <button id="loginBtn" class="primary">Connexion</button>
 </div>
 
+<!-- APP -->
 <div id="app" class="container hidden">
+
   <h1>BDC Admin</h1>
+
   <nav>
-    <button data-tab="dashboard" class="active" onclick="showTab('dashboard')">Tableau de bord</button>
-    <button data-tab="products" onclick="showTab('products')">Produits</button>
-    <button data-tab="categories" onclick="showTab('categories')">Catégories</button>
-    <button data-tab="news" onclick="showTab('news')">Actualités</button>
-    <button data-tab="masterclass" onclick="showTab('masterclass')">Masterclass</button>
-    <button data-tab="users" onclick="showTab('users')">Utilisateurs</button>
-    <button data-tab="push" onclick="showTab('push')">Notifications Push</button>
-    <button class="ghost" onclick="logout()">Déconnexion</button>
+    <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="nav-btn" data-tab="products">Produits</button>
+    <button class="nav-btn" data-tab="categories">Catégories</button>
+    <button class="nav-btn" data-tab="news">News</button>
+    <button class="nav-btn" data-tab="masterclass">Masterclass</button>
+    <button class="nav-btn" data-tab="users">Users</button>
+    <button class="nav-btn" data-tab="push">Push</button>
+    <button id="logoutBtn" class="danger">Logout</button>
   </nav>
 
-  <div id="msgArea"></div>
-
-  <section id="tab-dashboard" class="tab">
-    <div class="card">
-      <h2>Statistiques</h2>
-      <div class="stats" id="stats"></div>
-    </div>
-  </section>
-
+  <!-- PRODUCTS -->
   <section id="tab-products" class="tab hidden">
     <div class="card">
-      <h2>Créer / Modifier un produit</h2>
-      <div class="row">
-        <div><label>Slug</label><input id="p_slug" /></div>
-        <div><label>Nom</label><input id="p_name" /></div>
-      </div>
-      <label>Description</label><textarea id="p_desc"></textarea>
-      <div class="row">
-        <div><label>Prix (€)</label><input id="p_price" type="number" step="0.01" /></div>
-        <div><label>Catégorie (id)</label><select id="p_cat"></select></div>
-      </div>
-      <label>Image (URL)</label><input id="p_img" />
-      <label><input type="checkbox" id="p_new" /> Marquer comme nouveauté</label>
-      <br>
-      <button class="primary" onclick="createProduct()">Créer</button>
+      <h2>Produits</h2>
+
+      <input id="p_slug" placeholder="slug" />
+      <input id="p_name" placeholder="nom" />
+      <input id="p_price" type="number" placeholder="prix" />
+
+      <button id="createProductBtn" class="primary">Créer produit</button>
     </div>
+
     <div class="card">
-      <h2>Tous les produits</h2>
-      <table><thead><tr><th>Nom</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
-      <tbody id="productsTbody"></tbody></table>
+      <table>
+        <tbody id="productsTbody"></tbody>
+      </table>
     </div>
   </section>
 
-  <section id="tab-categories" class="tab hidden">
-    <div class="card">
-      <h2>Créer une catégorie</h2>
-      <div class="row">
-        <div><label>Slug</label><input id="c_slug" /></div>
-        <div><label>Nom</label><input id="c_name" /></div>
-      </div>
-      <label>Image URL</label><input id="c_img" />
-      <button class="primary" onclick="createCategory()">Créer</button>
-    </div>
-    <div class="card"><h2>Catégories</h2><table><thead><tr><th>Nom</th><th>Slug</th><th></th></tr></thead><tbody id="catTbody"></tbody></table></div>
-  </section>
-
-  <section id="tab-news" class="tab hidden">
-    <div class="card">
-      <h2>Nouvelle actualité (envoie une push auto)</h2>
-      <label>Titre</label><input id="n_title" />
-      <label>Sous-titre</label><input id="n_sub" />
-      <label>Corps</label><textarea id="n_body"></textarea>
-      <label>Image URL</label><input id="n_img" />
-      <button class="primary" onclick="createNews()">Publier + Notifier</button>
-    </div>
-    <div class="card"><h2>Liste</h2><table><thead><tr><th>Titre</th><th>Publiée le</th><th></th></tr></thead><tbody id="newsTbody"></tbody></table></div>
-  </section>
-
-  <section id="tab-masterclass" class="tab hidden">
-    <div class="card">
-      <h2>Nouvelle masterclass</h2>
-      <label>Titre</label><input id="m_title" />
-      <label>Description</label><textarea id="m_desc"></textarea>
-      <div class="row">
-        <div><label>Date (ISO)</label><input id="m_date" placeholder="2026-05-09T10:00:00Z" /></div>
-        <div><label>Capacité</label><input id="m_cap" type="number" value="8" /></div>
-      </div>
-      <label>Lieu</label><input id="m_loc" value="Toulouse" />
-      <button class="primary" onclick="createMasterclass()">Créer</button>
-    </div>
-    <div class="card"><h2>À venir</h2><table><thead><tr><th>Titre</th><th>Date</th><th>Places</th><th></th></tr></thead><tbody id="mcTbody"></tbody></table></div>
-  </section>
-
-  <section id="tab-users" class="tab hidden">
-    <div class="card">
-      <h2>Créer un utilisateur</h2>
-      <div class="row">
-        <div><label>Prénom</label><input id="u_first" /></div>
-        <div><label>Nom</label><input id="u_last" /></div>
-      </div>
-      <label>Email</label><input id="u_email" type="email" />
-      <label>Mot de passe (min 8)</label><input id="u_pw" type="password" />
-      <label>Rôle</label>
-      <select id="u_role"><option value="STUDENT">Étudiant</option><option value="ADMIN">Admin</option></select>
-      <button class="primary" onclick="createUser()">Créer</button>
-    </div>
-    <div class="card"><h2>Utilisateurs</h2><table><thead><tr><th>Email</th><th>Nom</th><th>Rôle</th><th></th></tr></thead><tbody id="usersTbody"></tbody></table></div>
-  </section>
-
-  <section id="tab-push" class="tab hidden">
-    <div class="card">
-      <h2>Envoyer une notification</h2>
-      <label>Titre</label><input id="push_title" placeholder="Nouvelle promo !" />
-      <label>Message</label><textarea id="push_body" placeholder="Découvrez nos nouvelles extensions..."></textarea>
-      <p style="color:var(--muted);font-size:12px;margin:8px 0">Laissé vide = diffusé à tous.</p>
-      <label>User IDs ciblés (séparés par ,)</label><input id="push_users" />
-      <button class="primary" onclick="sendPush()">Envoyer</button>
-    </div>
-    <div class="card">
-      <h2>Dernières notifications envoyées</h2>
-      <table><thead><tr><th>Titre</th><th>Destinataires</th><th>Date</th></tr></thead><tbody id="notifsTbody"></tbody></table>
-    </div>
-  </section>
 </div>
 
 <script>
 const API = location.origin + '/api/v1';
 let token = localStorage.getItem('bdc_admin_token');
 
-function showMsg(text, type = 'ok', where = 'msgArea') {
-  const el = document.getElementById(where);
-  el.innerHTML = `<div class="msg ${type}">${text}</div>`;
-  setTimeout(() => el.innerHTML = '', 4000);
-}
-
+/* API */
 async function api(path, opts = {}) {
   const res = await fetch(API + path, {
     ...opts,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: 'Bearer ' + token } : {}),
-      ...(opts.headers || {}),
-    },
+      ...(token ? { Authorization: 'Bearer ' + token } : {})
+    }
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || 'Error');
-  }
+
+  if (!res.ok) throw new Error("API error");
   return res.status === 204 ? null : res.json();
 }
 
+/* LOGIN */
 async function login() {
   const email = document.getElementById('loginEmail').value;
   const password = document.getElementById('loginPw').value;
-  try {
-    const data = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
-    if (data.user.role !== 'ADMIN') throw new Error('Accès admin uniquement');
-    token = data.token;
-    localStorage.setItem('bdc_admin_token', token);
-    boot();
-  } catch (e) {
-    showMsg(e.message, 'err', 'loginMsg');
-  }
+
+  const data = await api('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  });
+
+  token = data.token;
+  localStorage.setItem('bdc_admin_token', token);
+
+  boot();
 }
 
-function logout() {
-  localStorage.removeItem('bdc_admin_token');
-  token = null;
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('login').classList.remove('hidden');
-}
-
-function showTab(name) {
+/* NAV */
+function showTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
-  document.getElementById('tab-' + name).classList.remove('hidden');
-  document.querySelectorAll('nav button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  const loaders = { dashboard: loadStats, products: loadProducts, categories: loadCats,
-    news: loadNews, masterclass: loadMc, users: loadUsers, push: loadNotifs };
-  loaders[name]?.();
+  document.getElementById('tab-' + tab)?.classList.remove('hidden');
+
+  document.querySelectorAll('.nav-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab)
+  );
 }
 
-async function loadStats() {
-  try {
-    const s = await api('/admin/stats');
-    document.getElementById('stats').innerHTML = `
-      <div><div class="stat-label">Utilisateurs</div><div class="stat-value">${s.users}</div></div>
-      <div><div class="stat-label">Produits</div><div class="stat-value">${s.products}</div></div>
-      <div><div class="stat-label">Masterclass à venir</div><div class="stat-value">${s.upcomingMasterclass}</div></div>
-      <div><div class="stat-label">Réservations</div><div class="stat-value">${s.reservations}</div></div>
-      <div><div class="stat-label">Push tokens</div><div class="stat-value">${s.pushTokens}</div></div>`;
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
+/* PRODUCTS */
 async function loadProducts() {
-  const [products, cats] = await Promise.all([api('/products'), api('/categories')]);
-  document.getElementById('p_cat').innerHTML = '<option value="">-- Aucune --</option>' + cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('productsTbody').innerHTML = products.map(p => `
-    <tr><td>${p.name}</td><td>${p.price}€</td><td>${p.inStock ? 'Oui' : 'Non'}</td>
-    <td><button class="danger" onclick="deleteProduct('${p.id}')">Supprimer</button></td></tr>
-  `).join('');
+  const products = await api('/products');
+
+  document.getElementById('productsTbody').innerHTML =
+    products.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.price}</td>
+        <td><button class="danger delete-product" data-id="${p.id}">Supprimer</button></td>
+      </tr>
+    `).join('');
 }
 
-async function createProduct() {
-  try {
-    const body = {
-      slug: document.getElementById('p_slug').value,
-      name: document.getElementById('p_name').value,
-      description: document.getElementById('p_desc').value,
-      price: parseFloat(document.getElementById('p_price').value),
-      imageUrl: document.getElementById('p_img').value || undefined,
-      categoryId: document.getElementById('p_cat').value || undefined,
-      isNew: document.getElementById('p_new').checked,
-    };
-    await api('/admin/products', { method: 'POST', body: JSON.stringify(body) });
-    showMsg('Produit créé'); loadProducts();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function deleteProduct(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('/admin/products/' + id, { method: 'DELETE' });
-  showMsg('Supprimé'); loadProducts();
-}
-
-async function loadCats() {
-  const cats = await api('/categories');
-  document.getElementById('catTbody').innerHTML = cats.map(c => `
-    <tr><td>${c.name}</td><td>${c.slug}</td>
-    <td><button class="danger" onclick="deleteCat('${c.id}')">Supprimer</button></td></tr>
-  `).join('');
-}
-
-async function createCategory() {
-  try {
-    await api('/admin/categories', { method: 'POST', body: JSON.stringify({
-      slug: document.getElementById('c_slug').value,
-      name: document.getElementById('c_name').value,
-      imageUrl: document.getElementById('c_img').value || undefined,
-    })});
-    showMsg('Catégorie créée'); loadCats();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function deleteCat(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('/admin/categories/' + id, { method: 'DELETE' });
-  loadCats();
-}
-
-async function loadNews() {
-  const items = await api('/news');
-  document.getElementById('newsTbody').innerHTML = items.map(n => `
-    <tr><td>${n.title}</td><td>${new Date(n.publishedAt).toLocaleString()}</td>
-    <td><button class="danger" onclick="deleteNews('${n.id}')">Supprimer</button></td></tr>
-  `).join('');
-}
-
-async function createNews() {
-  try {
-    await api('/admin/news', { method: 'POST', body: JSON.stringify({
-      title: document.getElementById('n_title').value,
-      subtitle: document.getElementById('n_sub').value || undefined,
-      body: document.getElementById('n_body').value || undefined,
-      imageUrl: document.getElementById('n_img').value || undefined,
-    })});
-    showMsg('Publié + push envoyée'); loadNews();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function deleteNews(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('/admin/news/' + id, { method: 'DELETE' });
-  loadNews();
-}
-
-async function loadMc() {
-  const items = await api('/masterclass/upcoming');
-  document.getElementById('mcTbody').innerHTML = items.map(m => `
-    <tr><td>${m.title}</td><td>${new Date(m.date).toLocaleString()}</td><td>${m.spotsAvailable}/${m.capacity}</td>
-    <td><button class="danger" onclick="deleteMc('${m.id}')">Supprimer</button></td></tr>
-  `).join('');
-}
-
-async function createMasterclass() {
-  try {
-    await api('/admin/masterclass', { method: 'POST', body: JSON.stringify({
-      title: document.getElementById('m_title').value,
-      description: document.getElementById('m_desc').value || undefined,
-      date: document.getElementById('m_date').value,
-      capacity: parseInt(document.getElementById('m_cap').value),
-      location: document.getElementById('m_loc').value || undefined,
-    })});
-    showMsg('Créée'); loadMc();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function deleteMc(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('/admin/masterclass/' + id, { method: 'DELETE' });
-  loadMc();
-}
-
-async function loadUsers() {
-  const users = await api('/admin/users');
-  document.getElementById('usersTbody').innerHTML = users.map(u => `
-    <tr><td>${u.email}</td><td>${u.firstName} ${u.lastName}</td><td>${u.role}</td>
-    <td><button class="danger" onclick="deleteUser('${u.id}')">Supprimer</button></td></tr>
-  `).join('');
-}
-
-async function createUser() {
-  try {
-    await api('/admin/users', { method: 'POST', body: JSON.stringify({
-      firstName: document.getElementById('u_first').value,
-      lastName: document.getElementById('u_last').value,
-      email: document.getElementById('u_email').value,
-      password: document.getElementById('u_pw').value,
-      role: document.getElementById('u_role').value,
-    })});
-    showMsg('Utilisateur créé'); loadUsers();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function deleteUser(id) {
-  if (!confirm('Supprimer ?')) return;
-  await api('/admin/users/' + id, { method: 'DELETE' });
-  loadUsers();
-}
-
-async function sendPush() {
-  try {
-    const userIds = document.getElementById('push_users').value.split(',').map(s => s.trim()).filter(Boolean);
-    const body = {
-      title: document.getElementById('push_title').value,
-      body: document.getElementById('push_body').value,
-      userIds: userIds.length ? userIds : undefined,
-    };
-    const result = await api('/admin/notifications/push', { method: 'POST', body: JSON.stringify(body) });
-    showMsg(`✅ ${result.sent} envoyées, ${result.failed} échecs`);
-    loadNotifs();
-  } catch (e) { showMsg(e.message, 'err'); }
-}
-
-async function loadNotifs() {
-  const items = await api('/admin/notifications');
-  document.getElementById('notifsTbody').innerHTML = items.map(n => `
-    <tr><td>${n.title}</td><td>${n.sentTo}</td><td>${new Date(n.createdAt).toLocaleString()}</td></tr>
-  `).join('');
-}
-
+/* BOOT */
 function boot() {
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   showTab('dashboard');
+  loadProducts();
 }
 
-if (token) {
-  api('/auth/me').then(u => {
-    if (u.role === 'ADMIN') boot();
-    else logout();
-  }).catch(logout);
-}
+/* EVENTS (FIX CSP COMPLET) */
+document.addEventListener('click', async (e) => {
+
+  if (e.target.id === 'loginBtn') login();
+
+  if (e.target.id === 'logoutBtn') {
+    localStorage.removeItem('bdc_admin_token');
+    location.reload();
+  }
+
+  if (e.target.id === 'createProductBtn') {
+    await api('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        slug: document.getElementById('p_slug').value,
+        name: document.getElementById('p_name').value,
+        price: Number(document.getElementById('p_price').value)
+      })
+    });
+
+    loadProducts();
+  }
+
+  const del = e.target.closest('.delete-product');
+  if (del) {
+    await api('/admin/products/' + del.dataset.id, { method: 'DELETE' });
+    loadProducts();
+  }
+
+  const nav = e.target.closest('.nav-btn');
+  if (nav) showTab(nav.dataset.tab);
+});
+
+/* AUTO LOGIN */
+if (token) boot();
 </script>
+
 </body>
 </html>
