@@ -60,19 +60,24 @@ router.post('/messages', requireAuth, async (req: AuthedRequest, res, next) => {
       conv = await prisma.conversation.create({ data: { userId } });
     }
 
+    const priorUserMsgs = await prisma.message.count({
+      where: { conversationId: conv.id, role: 'USER' },
+    });
+
     const userMessage = await prisma.message.create({
       data: { conversationId: conv.id, role: 'USER', content },
     });
 
-    // Minimal auto-reply (stub). Replace with AI/LLM integration later.
-    await prisma.message.create({
-      data: {
-        conversationId: conv.id,
-        role: 'BOT',
-        content:
-          "Merci pour votre message. Un membre de l'équipe BDC vous répondra très vite.",
-      },
-    });
+    // Welcome reply only on the very first message of the conversation
+    if (priorUserMsgs === 0) {
+      await prisma.message.create({
+        data: {
+          conversationId: conv.id,
+          role: 'BOT',
+          content: "Merci pour votre message. Un membre de l'équipe BDC vous répondra très vite.",
+        },
+      });
+    }
 
     res.status(201).json({
       id: userMessage.id,

@@ -116,9 +116,9 @@ export default function LoginScreen() {
               En cas de problème de connexion, merci de nous contacter par mail{'\n'}
               <Text
                 style={styles.mail}
-                onPress={() => Linking.openURL('mailto:contact@beauteducil.com')}
+                onPress={() => Linking.openURL('mailto:beauteducil.collection@gmail.com')}
               >
-                contact@beauteducil.com
+                beauteducil.collection@gmail.com
               </Text>
             </Text>
           </View>

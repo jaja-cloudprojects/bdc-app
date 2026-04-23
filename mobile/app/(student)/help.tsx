@@ -25,14 +25,14 @@ export default function HelpScreen() {
         variant="outline"
         fullWidth
         style={{ marginTop: Spacing.md }}
-        onPress={() => Linking.openURL('mailto:contact@beauteducil.com')}
+        onPress={() => Linking.openURL('mailto:beauteducil.collection@gmail.com')}
       />
       <Button
         label="Appeler le support"
         variant="outline"
         fullWidth
         style={{ marginTop: Spacing.md }}
-        onPress={() => Linking.openURL('tel:+33500000000')}
+        onPress={() => Linking.openURL('tel:+33651398918')}
       />
     </StudentPageScaffold>
   );

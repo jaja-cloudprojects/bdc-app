@@ -4,7 +4,7 @@ import { z } from 'zod';
 import path from 'path';
 import fs from 'fs';
 import { prisma } from '../config/database';
-import { requireAdmin } from '../middleware/auth';
+import { requireAdmin, AuthedRequest } from '../middleware/auth';
 import { upload, fileUrl } from '../middleware/upload';
 import { broadcastPush, sendPushToUsers } from '../services/notification.service';
 
@@ -338,6 +338,94 @@ router.post('/notifications/inapp', async (req, res, next) => {
       data: { title, body, data: { type: 'INAPP' }, sentTo: 0 },
     });
     res.status(201).json(item);
+  } catch (e) { next(e); }
+});
+
+// ============================================================================
+// CONVERSATIONS (messagerie BDC Bot admin)
+// ============================================================================
+router.get('/conversations', async (_req, res, next) => {
+  try {
+    const conversations = await prisma.conversation.findMany({
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    res.json(conversations.map(c => ({
+      id: c.id,
+      user: c.user,
+      lastMessage: c.messages[0]
+        ? { role: c.messages[0].role, content: c.messages[0].content, createdAt: c.messages[0].createdAt.toISOString() }
+        : null,
+      updatedAt: c.updatedAt.toISOString(),
+    })));
+  } catch (e) { next(e); }
+});
+
+router.get('/conversations/:id/messages', async (req, res, next) => {
+  try {
+    const conv = await prisma.conversation.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!conv) return res.status(404).json({ message: 'Conversation introuvable' });
+    res.json({
+      id: conv.id,
+      user: conv.user,
+      messages: conv.messages.map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    });
+  } catch (e) { next(e); }
+});
+
+const adminMsgSchema = z.object({
+  content: z.string().min(1).max(2000),
+});
+
+router.post('/conversations/:id/messages', async (req: AuthedRequest, res, next) => {
+  try {
+    const { content } = adminMsgSchema.parse(req.body);
+    const conv = await prisma.conversation.findUnique({ where: { id: req.params.id } });
+    if (!conv) return res.status(404).json({ message: 'Conversation introuvable' });
+
+    const adminUser = await prisma.user.findUnique({
+      where: { id: req.user!.sub },
+      select: { firstName: true, lastName: true },
+    });
+    const senderName = adminUser ? `${adminUser.firstName} ${adminUser.lastName}` : 'BDC Support';
+
+    const msg = await prisma.message.create({
+      data: { conversationId: conv.id, role: 'ADMIN', content, attachments: { senderName } },
+    });
+    await prisma.conversation.update({ where: { id: conv.id }, data: {} });
+
+    // In-app notification ciblée pour l'utilisateur de la conversation
+    const preview = content.length > 100 ? content.substring(0, 100) + '…' : content;
+    await prisma.notification.create({
+      data: {
+        userId: conv.userId,
+        title: senderName,
+        body: preview,
+        data: { type: 'INAPP', source: 'chat' },
+      },
+    });
+
+    res.status(201).json({
+      id: msg.id,
+      role: msg.role,
+      content: msg.content,
+      senderName,
+      createdAt: msg.createdAt.toISOString(),
+    });
   } catch (e) { next(e); }
 });
 
