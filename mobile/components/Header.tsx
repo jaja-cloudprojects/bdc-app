@@ -12,6 +12,7 @@ interface Props {
   showCart?: boolean;
   showMenu?: boolean;
   logoSize?: 'sm' | 'md' | 'lg';
+  rightAction?: React.ReactNode;
 }
 
 export function Header({
@@ -20,6 +21,7 @@ export function Header({
   showCart = true,
   showMenu = true,
   logoSize = 'md',
+  rightAction,
 }: Props) {
   const insets = useSafeAreaInsets();
   return (
@@ -48,7 +50,7 @@ export function Header({
         </View>
 
         <View style={[styles.side, styles.sideRight]}>
-          {showCart && (
+          {rightAction ?? (showCart && (
             <Pressable
               onPress={onCartPress}
               style={({ pressed }) => [
@@ -61,7 +63,7 @@ export function Header({
             >
               <CartIcon />
             </Pressable>
-          )}
+          ))}
         </View>
       </View>
     </SafeAreaView>

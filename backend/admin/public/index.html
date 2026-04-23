@@ -1711,13 +1711,19 @@ async function loadChatThread(convId) {
     const data = await req('/admin/conversations/' + convId + '/messages');
 
     header.innerHTML = `
-      <div class="avatar">${(data.user.firstName.charAt(0) + data.user.lastName.charAt(0)).toUpperCase()}</div>
-      <div>
-        <div class="chat-panel-name">${escHtml(data.user.firstName)} ${escHtml(data.user.lastName)}</div>
-        <div class="chat-panel-email">${escHtml(data.user.email)}</div>
-      </div>`;
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <div class="avatar">${(data.user.firstName.charAt(0) + data.user.lastName.charAt(0)).toUpperCase()}</div>
+        <div style="min-width:0">
+          <div class="chat-panel-name">${escHtml(data.user.firstName)} ${escHtml(data.user.lastName)}</div>
+          <div class="chat-panel-email">${escHtml(data.user.email)}</div>
+        </div>
+      </div>
+      <button onclick="clearDashboardChat('${convId}')" title="Vider l'affichage côté dashboard" style="flex-shrink:0;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Vider l'affichage</button>`;
 
-    if (!data.messages.length) {
+    const clearedAt = parseInt(localStorage.getItem('chat_cleared_dash_' + convId) || '0', 10);
+    const filteredMessages = data.messages.filter(m => new Date(m.createdAt).getTime() > clearedAt);
+
+    if (!filteredMessages.length) {
       thread.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted)">Aucun message.</div>';
       return;
     }
@@ -1725,10 +1731,10 @@ async function loadChatThread(convId) {
     const atBottom = thread.scrollHeight - thread.scrollTop <= thread.clientHeight + 60;
 
     // Marquer comme lu (dernier message visible)
-    const lastMsg = data.messages[data.messages.length - 1];
+    const lastMsg = filteredMessages[filteredMessages.length - 1];
     if (lastMsg) _markSeen(convId, lastMsg.createdAt);
 
-    thread.innerHTML = data.messages.map(m => {
+    thread.innerHTML = filteredMessages.map(m => {
       const cls = m.role === 'USER' ? 'msg-user' : m.role === 'ADMIN' ? 'msg-admin' : 'msg-bot';
       let sender;
       if (m.role === 'USER')       sender = escHtml(data.user.firstName);
@@ -1745,6 +1751,12 @@ async function loadChatThread(convId) {
   } catch(e) {
     thread.innerHTML = `<div style="padding:20px;color:var(--red)">${e.message}</div>`;
   }
+}
+
+function clearDashboardChat(convId) {
+  if (!confirm("Vider l'affichage de cette conversation côté dashboard ?\nLa discussion reste visible dans l'application.")) return;
+  localStorage.setItem('chat_cleared_dash_' + convId, String(Date.now()));
+  loadChatThread(convId);
 }
 
 async function sendAdminMessage() {

@@ -8,7 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Text,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -22,6 +24,8 @@ import { Spacing, Radius } from '@/constants/Layout';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format } from 'date-fns';
+
+const CLEAR_KEY = 'chat_cleared_at';
 
 const FALLBACK_MESSAGES: ChatMessage[] = [
   {
@@ -61,8 +65,15 @@ export default function ChatScreen() {
   const { user } = useAuth();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [clearedAt, setClearedAt] = useState(0);
   const listRef = useRef<FlatList>(null);
   const qc = useQueryClient();
+
+  useEffect(() => {
+    AsyncStorage.getItem(CLEAR_KEY).then((val) => {
+      if (val) setClearedAt(parseInt(val, 10));
+    });
+  }, []);
 
   const { data: messages } = useQuery({
     queryKey: ['chat', 'messages'],
@@ -71,9 +82,13 @@ export default function ChatScreen() {
     refetchInterval: 2_000,
   });
 
+  const visibleMessages = (messages ?? FALLBACK_MESSAGES).filter(
+    (m) => new Date(m.createdAt).getTime() > clearedAt,
+  );
+
   useEffect(() => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 100);
-  }, [messages?.length]);
+  }, [visibleMessages.length]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -81,7 +96,6 @@ export default function ChatScreen() {
     try {
       setSending(true);
       setInput('');
-      // Optimistic
       qc.setQueryData<ChatMessage[]>(['chat', 'messages'], (old = []) => [
         ...old,
         {
@@ -101,9 +115,41 @@ export default function ChatScreen() {
     }
   };
 
+  const handleClear = () => {
+    Alert.alert(
+      'Vider le chat',
+      "Masquer tous les messages actuels sur votre appli ? La discussion reste visible depuis le dashboard.",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Vider',
+          style: 'destructive',
+          onPress: async () => {
+            const ts = Date.now();
+            await AsyncStorage.setItem(CLEAR_KEY, String(ts));
+            setClearedAt(ts);
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.root}>
-      <Header onMenuPress={() => router.back()} showCart={false} />
+      <Header
+        onMenuPress={() => router.back()}
+        showCart={false}
+        rightAction={
+          <Pressable
+            onPress={handleClear}
+            hitSlop={12}
+            style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.5 }]}
+            accessibilityLabel="Vider le chat"
+          >
+            <IconTrash />
+          </Pressable>
+        }
+      />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -111,7 +157,7 @@ export default function ChatScreen() {
       >
         <FlatList
           ref={listRef}
-          data={messages ?? FALLBACK_MESSAGES}
+          data={visibleMessages}
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => (
             <ChatBubble
@@ -128,6 +174,11 @@ export default function ChatScreen() {
             />
           )}
           contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyText}>Aucun message. Commencez la conversation !</Text>
+            </View>
+          }
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         />
 
@@ -168,6 +219,15 @@ export default function ChatScreen() {
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>
+  );
+}
+
+function IconTrash() {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke={Colors.textMuted} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M10 11v6M14 11v6" stroke={Colors.textMuted} strokeWidth="1.7" strokeLinecap="round" />
+    </Svg>
   );
 }
 
@@ -234,9 +294,26 @@ function IconSend() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
+  clearBtn: {
+    padding: 6,
+    borderRadius: 8,
+  },
   listContent: {
     paddingVertical: Spacing.md,
     paddingBottom: Spacing.lg,
+  },
+  emptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 32,
+  },
+  emptyText: {
+    fontFamily: FontFamily.sans,
+    fontSize: FontSize.base,
+    color: Colors.textMuted,
+    textAlign: 'center',
   },
   inputBar: {
     borderTopWidth: StyleSheet.hairlineWidth,
