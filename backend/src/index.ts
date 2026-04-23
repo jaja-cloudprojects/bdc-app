@@ -17,6 +17,7 @@ import masterclassRoutes from './routes/masterclass.routes';
 import chatRoutes from './routes/chat.routes';
 import documentsRoutes from './routes/documents.routes';
 import adminRoutes from './routes/admin.routes';
+import notificationsRoutes from './routes/notifications.routes';
 
 const app = express();
 
@@ -26,6 +27,16 @@ const app = express();
 app.set('trust proxy', 1);
 app.use(helmet({
   crossOriginResourcePolicy: false, // allow /uploads from mobile app
+  hsts: false, // pas de HTTPS forcé — ce serveur tourne en HTTP
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'"],
+    },
+  },
 }));
 app.use(cors({
   origin: env.corsOrigin.includes('*') ? true : env.corsOrigin,
@@ -87,6 +98,7 @@ api.use('/news', publicLimiter, newsRoutes);
 api.use('/masterclass', publicLimiter, masterclassRoutes);
 api.use('/chat', chatRoutes);
 api.use('/documents', documentsRoutes);
+api.use('/notifications', publicLimiter, notificationsRoutes);
 api.use('/admin', adminRoutes);
 
 app.use('/api/v1', api);

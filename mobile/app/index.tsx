@@ -22,22 +22,25 @@ import { FontFamily, FontSize, LetterSpacing } from '@/constants/Typography';
 import { Spacing, Radius, MaxContentWidth } from '@/constants/Layout';
 import { useResponsive } from '@/hooks/useResponsive';
 import { api } from '@/services/api';
+import { Images } from '@/constants/Images';
+import { useAuth } from '@/contexts/AuthContext';
 
-const FALLBACK_HERO = 'https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=1200';
+const FALLBACK_HERO = Images.heroHome;
 const FALLBACK_CATEGORIES = [
-  { slug: 'extensions-cils', name: 'Extensions de cils', imageUrl: 'https://images.unsplash.com/photo-1571875257727-256c39da42af?w=400' },
-  { slug: 'lash-brow-lift', name: 'Lash brow lift', imageUrl: 'https://images.unsplash.com/photo-1610992015732-2449b76344bc?w=400' },
-  { slug: 'liquides', name: 'Les liquides', imageUrl: 'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400' },
+  { slug: 'extensions-cils', name: 'Extensions de cils', imageUrl: Images.categories['extensions-cils'] },
+  { slug: 'lash-brow-lift', name: 'Lash brow lift', imageUrl: Images.categories['lash-brow-lift'] },
+  { slug: 'liquides', name: 'Les liquides', imageUrl: Images.categories.liquides },
 ];
 const FALLBACK_PRODUCTS = [
-  { id: '1', name: 'Shampoing Chantilly', subtitle: '', imageUrl: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=400', price: 19.9 },
-  { id: '2', name: 'Volume Classique', subtitle: 'Burgundy', imageUrl: 'https://images.unsplash.com/photo-1599733589046-8a35ed0c6b8d?w=400', price: 29.9 },
-  { id: '3', name: 'Bouteille Pro', subtitle: '', imageUrl: 'https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?w=400', price: 24.0 },
+  { id: '1', name: 'Shampoing Chantilly', subtitle: '', imageUrl: Images.products.shampoing, price: 19.9 },
+  { id: '2', name: 'Volume Classique', subtitle: 'Burgundy', imageUrl: Images.products.volume, price: 29.9 },
+  { id: '3', name: 'Bouteille Pro', subtitle: '', imageUrl: Images.products.bouteille, price: 24.0 },
 ];
 
 export default function HomeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, scale, isTablet, isTabletLg } = useResponsive();
+  const { isAuthenticated } = useAuth();
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -146,7 +149,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/boutique' as any)}
         >
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200' }}
+            source={{ uri: Images.visiterBoutique }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
@@ -164,7 +167,10 @@ export default function HomeScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         items={menuItems}
-        bottomItem={{ label: 'Espace élèves', onPress: () => router.push('/(auth)/login' as any) }}
+        bottomItem={{
+          label: 'Espace élèves',
+          onPress: () => router.push(isAuthenticated ? '/(student)/dashboard' : '/(auth)/login' as any),
+        }}
         onLogoPress={() => router.push('/')}
       />
     </View>

@@ -55,6 +55,41 @@ router.post('/users', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+const updateUserSchema = z.object({
+  email:     z.string().email().optional(),
+  password:  z.string().min(8).optional(),
+  firstName: z.string().min(1).optional(),
+  lastName:  z.string().min(1).optional(),
+  role:      z.enum(['STUDENT', 'ADMIN']).optional(),
+});
+
+router.patch('/users/:id', async (req, res, next) => {
+  try {
+    const data = updateUserSchema.parse(req.body);
+
+    if (data.email) {
+      const conflict = await prisma.user.findFirst({
+        where: { email: data.email.toLowerCase(), NOT: { id: req.params.id } },
+      });
+      if (conflict) return res.status(409).json({ message: 'Cet email est déjà utilisé.' });
+    }
+
+    const update: Record<string, unknown> = {};
+    if (data.firstName) update.firstName = data.firstName;
+    if (data.lastName)  update.lastName  = data.lastName;
+    if (data.email)     update.email     = data.email.toLowerCase();
+    if (data.role)      update.role      = data.role;
+    if (data.password)  update.passwordHash = await bcrypt.hash(data.password, 10);
+
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: update,
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, createdAt: true },
+    });
+    res.json(user);
+  } catch (e) { next(e); }
+});
+
 router.delete('/users/:id', async (req, res, next) => {
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
@@ -287,6 +322,22 @@ router.get('/notifications', async (_req, res, next) => {
       take: 100,
     });
     res.json(items);
+  } catch (e) { next(e); }
+});
+
+// In-app notification (stored in DB, polled by mobile — no Expo push)
+const inappSchema = z.object({
+  title: z.string().min(1).max(120),
+  body: z.string().min(1).max(400),
+});
+
+router.post('/notifications/inapp', async (req, res, next) => {
+  try {
+    const { title, body } = inappSchema.parse(req.body);
+    const item = await prisma.notification.create({
+      data: { title, body, data: { type: 'INAPP' }, sentTo: 0 },
+    });
+    res.status(201).json(item);
   } catch (e) { next(e); }
 });
 

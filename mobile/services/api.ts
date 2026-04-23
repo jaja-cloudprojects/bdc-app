@@ -167,12 +167,25 @@ export interface StudentUser {
   role: 'STUDENT' | 'ADMIN';
 }
 
+export interface UpdateProfilePayload {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
 export interface ChatMessage {
   id: string;
   conversationId: string;
   role: 'USER' | 'BOT' | 'ADMIN';
   content: string;
   attachments?: { type: 'image' | 'file'; url: string }[];
+  createdAt: string;
+}
+
+export interface InAppNotification {
+  id: string;
+  title: string;
+  body: string;
   createdAt: string;
 }
 
@@ -223,6 +236,10 @@ export const api = {
   documents: {
     list: () => apiClient.get<Document[]>('/documents'),
   },
+  notifications: {
+    list: (since?: string) =>
+      apiClient.get<InAppNotification[]>('/notifications', { params: since ? { since } : undefined }),
+  },
   chat: {
     history: (conversationId?: string) =>
       apiClient.get<ChatMessage[]>('/chat/messages', {
@@ -230,6 +247,17 @@ export const api = {
       }),
     send: (content: string, conversationId?: string) =>
       apiClient.post<ChatMessage>('/chat/messages', { content, conversationId }),
+  },
+  users: {
+    updateProfile: (payload: UpdateProfilePayload) =>
+      apiClient.patch<StudentUser>('/auth/me', payload),
+    uploadAvatar: (uri: string, mimeType: string) => {
+      const form = new FormData();
+      form.append('avatar', { uri, type: mimeType, name: 'avatar.jpg' } as any);
+      return apiClient.post<{ avatarUrl: string }>('/auth/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
   },
 };
 

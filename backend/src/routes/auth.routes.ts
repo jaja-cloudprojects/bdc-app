@@ -8,6 +8,7 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
+import { upload, fileUrl } from '../middleware/upload';
 
 const router = Router();
 
@@ -84,6 +85,61 @@ router.get('/me', requireAuth, async (req: AuthedRequest, res, next) => {
 router.post('/logout', requireAuth, async (_req, res) => {
   // Stateless JWT: client just discards. Could add a blacklist here.
   res.json({ ok: true });
+});
+
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  email: z.string().email().optional(),
+});
+
+router.patch('/me', requireAuth, async (req: AuthedRequest, res, next) => {
+  try {
+    const data = updateProfileSchema.parse(req.body);
+
+    if (data.email) {
+      const conflict = await prisma.user.findFirst({
+        where: { email: data.email.toLowerCase(), NOT: { id: req.user!.sub } },
+      });
+      if (conflict) return res.status(409).json({ message: 'Cet email est déjà utilisé.' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user!.sub },
+      data: {
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.email !== undefined && { email: data.email.toLowerCase() }),
+      },
+    });
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/avatar', requireAuth, upload.single('avatar'), async (req: AuthedRequest, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Aucun fichier reçu.' });
+
+    const avatarUrl = fileUrl(req.file.filename);
+    await prisma.user.update({
+      where: { id: req.user!.sub },
+      data: { avatarUrl },
+    });
+
+    res.json({ avatarUrl });
+  } catch (e) {
+    next(e);
+  }
 });
 
 const pushTokenSchema = z.object({

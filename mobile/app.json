@@ -21,7 +21,9 @@
       "bundleIdentifier": "com.beauteducil.app",
       "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
         "NSPhotoLibraryUsageDescription": "L'application a besoin d'accéder à vos photos pour la gestion de votre profil.",
         "NSCameraUsageDescription": "L'application a besoin d'accéder à la caméra pour prendre des photos."
@@ -35,10 +37,11 @@
       "package": "com.beauteducil.app",
       "versionCode": 1,
       "permissions": [
-        "NOTIFICATIONS",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "CAMERA"
+        "android.permission.NOTIFICATIONS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -77,17 +80,16 @@
       "typedRoutes": true
     },
     "extra": {
-      "eas": {
-        "projectId": "your-eas-project-id"
-      },
       "apiUrl": "https://api.beauteducil.com",
-      "apiUrlDev": "http://localhost:4000"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/your-eas-project-id"
+      "apiUrlDev": "http://localhost:4000",
+      "router": {},
+      "eas": {
+        "projectId": "98149a76-124f-4577-9690-7069e072c4c6"
+      }
     },
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "owner": "jaja31100"
   }
 }

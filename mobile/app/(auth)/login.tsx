@@ -74,7 +74,7 @@ export default function LoginScreen() {
               Élèves
             </Text>
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=300' }}
+              source={{ uri: 'https://i.postimg.cc/F9g9RdFH/capture-produits.png' }}
               style={styles.decorImage}
               contentFit="contain"
             />
