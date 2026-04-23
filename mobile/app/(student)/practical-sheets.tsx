@@ -53,7 +53,9 @@ export default function PracticalSheetsScreen() {
       invalidateBoth();
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? 'La réservation a échoué.';
+      const serverMsg = err?.response?.data?.message;
+      const isNetwork = !err?.response;
+      const msg = serverMsg ?? (isNetwork ? 'Impossible de joindre le serveur. Vérifiez votre connexion.' : 'La réservation a échoué.');
       Alert.alert('Erreur', msg);
     },
   });
@@ -82,7 +84,7 @@ export default function PracticalSheetsScreen() {
   };
 
   return (
-    <StudentPageScaffold title="Fiches pratiques" subtitle="Masterclasses et ressources">
+    <StudentPageScaffold title="Réserver une masterclass" subtitle="Masterclasses et ressources">
       {/* Tab switcher */}
       <View style={styles.tabs}>
         <Pressable

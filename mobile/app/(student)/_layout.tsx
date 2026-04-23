@@ -52,6 +52,7 @@ export default function StudentLayout() {
         <Stack.Screen name="profile" />
         <Stack.Screen name="practical-sheets" />
         <Stack.Screen name="help" />
+        <Stack.Screen name="pdf-viewer" />
       </Stack>
 
       {banner && (

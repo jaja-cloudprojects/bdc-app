@@ -81,7 +81,7 @@
     },
     "extra": {
       "apiUrl": "https://api.beauteducil.com",
-      "apiUrlDev": "http://localhost:4000",
+      "apiUrlDev": "http://192.168.1.17:4000",
       "router": {},
       "eas": {
         "projectId": "98149a76-124f-4577-9690-7069e072c4c6"

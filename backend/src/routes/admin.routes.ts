@@ -6,9 +6,10 @@ import fs from 'fs';
 import cron from 'node-cron';
 import { prisma } from '../config/database';
 import { requireAdmin, AuthedRequest } from '../middleware/auth';
-import { upload, fileUrl } from '../middleware/upload';
+import { upload, fileUrl, pdfUpload } from '../middleware/upload';
 import { broadcastPush, sendPushToUsers } from '../services/notification.service';
 import { registerRecurring, unregisterRecurring, fireCampaign } from '../services/campaign.scheduler';
+import { uploadDocument, deleteDocument } from '../config/supabase';
 
 const router = Router();
 
@@ -36,7 +37,7 @@ const createUserSchema = z.object({
   password: z.string().min(8),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.enum(['STUDENT', 'ADMIN']).default('STUDENT'),
+  role: z.enum(['STUDENT', 'FORMATRICE', 'ADMIN']).default('STUDENT'),
 });
 
 router.post('/users', async (req, res, next) => {
@@ -62,7 +63,7 @@ const updateUserSchema = z.object({
   password:  z.string().min(8).optional(),
   firstName: z.string().min(1).optional(),
   lastName:  z.string().min(1).optional(),
-  role:      z.enum(['STUDENT', 'ADMIN']).optional(),
+  role:      z.enum(['STUDENT', 'FORMATRICE', 'ADMIN']).optional(),
 });
 
 router.patch('/users/:id', async (req, res, next) => {
@@ -161,6 +162,21 @@ router.put('/products/:id', async (req, res, next) => {
   try {
     const data = productSchema.partial().parse(req.body);
     const product = await prisma.product.update({ where: { id: req.params.id }, data: data as any });
+    res.json(product);
+  } catch (e) { next(e); }
+});
+
+router.patch('/products/:id/stock', async (req, res, next) => {
+  try {
+    const stock = req.body.stock;
+    const isValidStock = Number.isInteger(stock) && stock >= 0;
+    const product = await prisma.product.update({
+      where: { id: req.params.id },
+      data: {
+        stock: isValidStock ? stock : null,
+        inStock: isValidStock ? stock > 0 : true,
+      },
+    });
     res.json(product);
   } catch (e) { next(e); }
 });
@@ -287,7 +303,7 @@ router.delete('/masterclass/:id', async (req, res, next) => {
 });
 
 // ============================================================================
-// DOCUMENTS
+// DOCUMENTS (PDF — stored in Supabase Storage)
 // ============================================================================
 router.get('/documents', async (_req, res, next) => {
   try {
@@ -296,19 +312,22 @@ router.get('/documents', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/documents', upload.single('file'), async (req, res, next) => {
+router.post('/documents', pdfUpload.single('file'), async (req, res, next) => {
   try {
     const file = req.file;
-    if (!file) return res.status(400).json({ message: 'file required' });
-    const { title, category, userId } = req.body as Record<string, string>;
+    if (!file) return res.status(400).json({ message: 'Fichier PDF requis.' });
+    const { title, category } = req.body as Record<string, string>;
+
+    const fileUrl = await uploadDocument(file.buffer, file.originalname, file.mimetype);
+
     const doc = await prisma.document.create({
       data: {
-        title: title || file.originalname,
-        category: category || 'general',
-        fileUrl: fileUrl(file.filename),
-        fileType: file.mimetype,
+        title: (title?.trim()) || file.originalname.replace(/\.pdf$/i, ''),
+        category: category?.trim() || 'Cours',
+        fileUrl,
+        fileType: 'application/pdf',
         fileSize: file.size,
-        userId: userId || null,
+        userId: null, // visible by all students
       },
     });
     res.status(201).json(doc);
@@ -318,10 +337,19 @@ router.post('/documents', upload.single('file'), async (req, res, next) => {
 router.delete('/documents/:id', async (req, res, next) => {
   try {
     const doc = await prisma.document.findUnique({ where: { id: req.params.id } });
-    if (!doc) return res.status(404).json({ message: 'Not found' });
-    const filename = path.basename(doc.fileUrl);
-    const fullPath = path.resolve('./uploads', filename);
-    fs.unlink(fullPath, () => {});
+    if (!doc) return res.status(404).json({ message: 'Document introuvable.' });
+
+    // Remove from Supabase Storage (extract path from public URL)
+    try {
+      const url = new URL(doc.fileUrl);
+      const parts = url.pathname.split('/');
+      const bucketIdx = parts.findIndex((p) => p === 'documents');
+      if (bucketIdx !== -1) {
+        const storagePath = parts.slice(bucketIdx + 1).join('/');
+        await deleteDocument(storagePath);
+      }
+    } catch { /* ignore storage errors — still delete DB record */ }
+
     await prisma.document.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (e) { next(e); }
@@ -367,6 +395,13 @@ router.get('/notifications', async (_req, res, next) => {
       take: 100,
     });
     res.json(items);
+  } catch (e) { next(e); }
+});
+
+router.delete('/notifications', async (_req, res, next) => {
+  try {
+    const { count } = await prisma.notification.deleteMany({});
+    res.json({ ok: true, deleted: count });
   } catch (e) { next(e); }
 });
 

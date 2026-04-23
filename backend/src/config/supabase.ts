@@ -11,13 +11,45 @@ let _supabase: SupabaseClient | null = null;
 function getClient(): SupabaseClient {
   if (!_supabase) {
     if (!env.supabaseUrl || !env.supabaseServiceRoleKey) {
-      throw new Error('SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont requis pour l\'upload d\'avatars.');
+      throw new Error('SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont requis.');
     }
     _supabase = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
       auth: { persistSession: false },
     });
   }
   return _supabase;
+}
+
+export async function uploadDocument(
+  fileBuffer: Buffer,
+  originalName: string,
+  mimeType: string,
+): Promise<string> {
+  const supabase = getClient();
+  const bucket = env.supabaseDocumentsBucket;
+
+  // Ensure the bucket exists (creates it as public if missing)
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === bucket)) {
+    await supabase.storage.createBucket(bucket, { public: true });
+  }
+
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const storagePath = `${Date.now()}-${safeName}`;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(storagePath, fileBuffer, { contentType: mimeType, upsert: false });
+
+  if (error) throw new Error(`Supabase document upload failed: ${error.message}`);
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+export async function deleteDocument(storagePath: string): Promise<void> {
+  const supabase = getClient();
+  await supabase.storage.from(env.supabaseDocumentsBucket).remove([storagePath]);
 }
 
 export async function uploadAvatar(

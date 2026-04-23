@@ -32,4 +32,5 @@ export const env = {
   supabaseUrl: process.env.SUPABASE_URL ?? '',
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
   supabaseAvatarBucket: process.env.SUPABASE_AVATAR_BUCKET ?? 'avatars',
+  supabaseDocumentsBucket: process.env.SUPABASE_DOCUMENTS_BUCKET ?? 'documents',
 };

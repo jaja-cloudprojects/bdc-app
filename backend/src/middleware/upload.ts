@@ -43,3 +43,15 @@ export const avatarUpload = multer({
     else cb(new Error('Format non supporté (jpg, png, webp)'));
   },
 });
+
+// Memory-based upload for PDF documents → buffer passed directly to Supabase
+export const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB max for PDFs
+  fileFilter: (_req, file, cb) => {
+    const isPdf = file.mimetype === 'application/pdf' ||
+      path.extname(file.originalname).toLowerCase() === '.pdf';
+    if (isPdf) cb(null, true);
+    else cb(new Error('Seuls les fichiers PDF sont acceptés.'));
+  },
+});

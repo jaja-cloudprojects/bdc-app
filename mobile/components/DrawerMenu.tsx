@@ -1,18 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  runOnJS,
   Easing,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -31,31 +29,43 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   items: MenuItem[];
+  logoutItem?: MenuItem;
   bottomItem?: MenuItem;
   onLogoPress?: () => void;
 }
 
-export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }: Props) {
+// Duration must match the close animation below
+const CLOSE_DURATION = 240;
+
+export function DrawerMenu({ visible, onClose, items, logoutItem, bottomItem, onLogoPress }: Props) {
   const { width } = useResponsive();
   const insets = useSafeAreaInsets();
   const drawerWidth = Math.min(width * 0.82, 360);
+
+  // modalVisible stays true during the close animation so the Modal
+  // doesn't vanish before the slide-out finishes.
+  const [modalVisible, setModalVisible] = useState(visible);
 
   const translateX = useSharedValue(-drawerWidth);
   const overlayOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
+      setModalVisible(true);
       translateX.value = withTiming(0, {
         duration: 320,
-        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94), // iOS ease-out
+        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94),
       });
       overlayOpacity.value = withTiming(1, { duration: 320 });
     } else {
       translateX.value = withTiming(-drawerWidth, {
-        duration: 240,
-        easing: Easing.bezier(0.55, 0, 1, 0.45), // iOS ease-in
+        duration: CLOSE_DURATION,
+        easing: Easing.bezier(0.55, 0, 1, 0.45),
       });
-      overlayOpacity.value = withTiming(0, { duration: 240 });
+      overlayOpacity.value = withTiming(0, { duration: CLOSE_DURATION });
+      // Hide the Modal only after the slide-out animation completes
+      const t = setTimeout(() => setModalVisible(false), CLOSE_DURATION);
+      return () => clearTimeout(t);
     }
   }, [visible, drawerWidth, translateX, overlayOpacity]);
 
@@ -67,15 +77,16 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
     opacity: overlayOpacity.value,
   }));
 
+  // Wait for the close animation to finish before navigating so the
+  // stack push animation plays cleanly without competing with the modal.
   const handleItemPress = (item: MenuItem) => {
     onClose();
-    // Delay slightly so menu closes visually first
-    setTimeout(() => item.onPress(), 160);
+    setTimeout(() => item.onPress(), CLOSE_DURATION + 20);
   };
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
       animationType="none"
       onRequestClose={onClose}
@@ -98,10 +109,7 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
             {items.map((item, i) => (
               <Pressable
                 key={i}
-                style={({ pressed }) => [
-                  styles.item,
-                  pressed && styles.itemPressed,
-                ]}
+                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
                 onPress={() => handleItemPress(item)}
               >
                 <Text style={styles.itemText}>{item.label}</Text>
@@ -111,14 +119,20 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
 
           {bottomItem && (
             <Pressable
-              style={({ pressed }) => [
-                styles.bottomItem,
-                pressed && styles.itemPressed,
-              ]}
+              style={({ pressed }) => [styles.bottomItem, pressed && styles.itemPressed]}
               onPress={() => handleItemPress(bottomItem)}
             >
               <AvatarIcon />
               <Text style={styles.bottomItemText}>{bottomItem.label}</Text>
+            </Pressable>
+          )}
+
+          {logoutItem && (
+            <Pressable
+              style={({ pressed }) => [styles.logoutItem, pressed && styles.itemPressed]}
+              onPress={() => handleItemPress(logoutItem)}
+            >
+              <Text style={styles.logoutText}>{logoutItem.label}</Text>
             </Pressable>
           )}
         </View>
@@ -190,5 +204,17 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.sansMedium,
     fontSize: FontSize.md,
     color: Colors.textPrimary,
+  },
+  logoutItem: {
+    paddingVertical: Spacing.base,
+    marginTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+  },
+  logoutText: {
+    fontFamily: FontFamily.sansMedium,
+    fontSize: FontSize.md,
+    color: Colors.textMuted,
+    letterSpacing: LetterSpacing.tight,
   },
 });

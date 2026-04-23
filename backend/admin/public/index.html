@@ -306,8 +306,9 @@
       letter-spacing: .3px;
     }
 
-    .badge-student { background: var(--blue-lt); color: var(--blue); }
-    .badge-admin   { background: var(--pink-lt); color: var(--pink); }
+    .badge-student    { background: var(--blue-lt); color: var(--blue); }
+    .badge-formatrice { background: #f0fdf4; color: #16a34a; }
+    .badge-admin      { background: var(--pink-lt); color: var(--pink); }
 
     /* ── BUTTONS ────────────────────────────────────────── */
     .btn {
@@ -687,6 +688,9 @@
       <button class="nav-item" data-tab="push">
         <span class="nav-icon">◎</span> Notifications
       </button>
+      <button class="nav-item" data-tab="documents">
+        <span class="nav-icon">◧</span> Documents
+      </button>
       <button class="nav-item" data-tab="messages">
         <span class="nav-icon">✉</span> Messages
       </button>
@@ -757,7 +761,7 @@
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Nom</th><th>Prix</th><th>Stock</th><th></th></tr></thead>
+              <thead><tr><th>Nom</th><th>Prix</th><th style="min-width:160px">Stock</th><th></th></tr></thead>
               <tbody id="productsTbody"></tbody>
             </table>
           </div>
@@ -935,15 +939,62 @@
 
         <!-- History -->
         <div class="card" style="margin-top:24px">
-          <div class="card-title">Historique des notifications</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div class="card-title" style="margin-bottom:0">Historique des notifications</div>
+            <button id="clearNotifHistoryBtn" class="btn btn-danger btn-sm">Vider l'historique</button>
+          </div>
           <table>
             <thead><tr>
-              <th>Type</th><th>Titre</th><th>Message</th><th>Date</th>
+              <th class="sortable" data-sort="type" id="notif-th-type">Type</th>
+              <th>Titre</th><th>Message</th>
+              <th class="sortable sort-desc" data-sort="date" id="notif-th-date">Date</th>
             </tr></thead>
             <tbody id="notif-history-body">
               <tr><td colspan="4" style="color:var(--muted);text-align:center">Chargement…</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS -->
+      <div id="tab-documents" class="section">
+        <div class="card">
+          <div class="card-title">Envoyer un document PDF</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Titre</label>
+              <input id="doc_title" type="text" placeholder="Ex : Support de cours Lash Lift" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Catégorie</label>
+              <select id="doc_category">
+                <option value="Cours">Cours</option>
+                <option value="Attestation">Attestation</option>
+                <option value="Support">Support</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fichier PDF</label>
+            <input id="doc_file" type="file" accept=".pdf,application/pdf"
+              style="padding:8px;border:1px solid var(--border);border-radius:8px;width:100%;background:var(--card);color:var(--text);cursor:pointer" />
+          </div>
+          <button id="uploadDocBtn" class="btn btn-primary">Envoyer le document</button>
+        </div>
+
+        <div class="card" style="margin-top:24px">
+          <div class="card-title">Documents disponibles pour les élèves</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Titre</th><th>Catégorie</th><th>Taille</th><th>Date</th><th></th>
+              </tr></thead>
+              <tbody id="docsTbody">
+                <tr><td colspan="5" style="color:var(--muted);text-align:center">Chargement…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1016,6 +1067,7 @@
       <label class="form-label">Rôle</label>
       <select id="eu_role">
         <option value="STUDENT">Élève</option>
+        <option value="FORMATRICE">Formatrice</option>
         <option value="ADMIN">Administrateur</option>
       </select>
     </div>
@@ -1044,6 +1096,7 @@
       <label class="form-label">Rôle</label>
       <select id="u_role">
         <option value="STUDENT">Élève</option>
+        <option value="FORMATRICE">Formatrice</option>
         <option value="ADMIN">Administrateur</option>
       </select>
     </div>
@@ -1154,7 +1207,7 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 const TITLES = {
   dashboard: 'Dashboard', users: 'Utilisateurs', products: 'Produits',
   categories: 'Catégories', news: 'Actualités', masterclass: 'Masterclass',
-  push: 'Notifications', messages: 'Messages',
+  push: 'Notifications', documents: 'Documents', messages: 'Messages',
 };
 
 const LOADERS = {
@@ -1165,6 +1218,7 @@ const LOADERS = {
   news:      loadNews,
   masterclass: loadMasterclass,
   push: () => { loadNotifHistory(); loadCampaigns(); },
+  documents: loadDocuments,
   messages: loadConversations,
 };
 
@@ -1239,6 +1293,53 @@ let _usersCache    = [];
 let _sortCol       = 'createdAt';
 let _sortDir       = 'desc';
 
+let _notifCache    = [];
+let _notifSortCol  = 'date';
+let _notifSortDir  = 'desc';
+
+function sortAndRenderNotifs() {
+  const col = _notifSortCol;
+  const dir = _notifSortDir;
+
+  const sorted = [..._notifCache].sort((a, b) => {
+    let va, vb;
+    if (col === 'type') {
+      va = (a.data?.type === 'INAPP') ? 'In-App' : 'Push';
+      vb = (b.data?.type === 'INAPP') ? 'In-App' : 'Push';
+    } else {
+      va = new Date(a.createdAt).getTime();
+      vb = new Date(b.createdAt).getTime();
+    }
+    if (va < vb) return dir === 'asc' ? -1 : 1;
+    if (va > vb) return dir === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  document.querySelectorAll('#notif-history-body').forEach(() => {});
+  document.getElementById('notif-th-type')?.classList.remove('sort-asc', 'sort-desc');
+  document.getElementById('notif-th-date')?.classList.remove('sort-asc', 'sort-desc');
+  const activeTh = col === 'type' ? 'notif-th-type' : 'notif-th-date';
+  document.getElementById(activeTh)?.classList.add('sort-' + dir);
+
+  const tbody = document.getElementById('notif-history-body');
+  if (!tbody) return;
+  if (!sorted.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucune notification envoyée</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sorted.map(n => {
+    const type = (n.data?.type === 'INAPP')
+      ? '<span style="background:#1e3a5f;color:#7fc5ff;font-size:11px;padding:2px 8px;border-radius:12px">In-App</span>'
+      : '<span style="background:#2d1e3a;color:#c57fff;font-size:11px;padding:2px 8px;border-radius:12px">Push</span>';
+    return `<tr>
+      <td>${type}</td>
+      <td style="font-weight:500">${n.title}</td>
+      <td style="color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.body}</td>
+      <td style="white-space:nowrap">${fmt(n.createdAt)}</td>
+    </tr>`;
+  }).join('');
+}
+
 function sortAndRender() {
   const col = _sortCol;
   const dir = _sortDir;
@@ -1282,8 +1383,8 @@ function sortAndRender() {
       </td>
       <td style="color:var(--muted)">${u.email}</td>
       <td>
-        <span class="badge badge-${u.role === 'ADMIN' ? 'admin' : 'student'}">
-          ${u.role === 'ADMIN' ? 'Admin' : 'Élève'}
+        <span class="badge badge-${u.role === 'ADMIN' ? 'admin' : u.role === 'FORMATRICE' ? 'formatrice' : 'student'}">
+          ${u.role === 'ADMIN' ? 'Admin' : u.role === 'FORMATRICE' ? 'Formatrice' : 'Élève'}
         </span>
       </td>
       <td style="color:var(--muted);font-size:12.5px">${fmt(u.createdAt)}</td>
@@ -1379,14 +1480,33 @@ async function loadProducts() {
   const tbody = document.getElementById('productsTbody');
   try {
     const list = await req('/products');
-    tbody.innerHTML = list.length
-      ? list.map(p => `<tr>
-          <td>${p.name}</td>
-          <td>${p.price} €</td>
-          <td>${p.inStock ? '✅' : '❌'}</td>
-          <td><button class="btn btn-danger btn-sm del-product" data-id="${p.id}">Supprimer</button></td>
-        </tr>`).join('')
-      : '<tr><td colspan="4"><div class="empty">Aucun produit.</div></td></tr>';
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="empty">Aucun produit.</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(p => {
+      const hasStock = p.stock !== null && p.stock !== undefined;
+      const stockVal = hasStock ? p.stock : '';
+      const statusBadge = hasStock
+        ? (p.stock > 0
+            ? `<span style="background:#f0fdf4;color:#16a34a;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:700">${p.stock} en stock</span>`
+            : `<span style="background:#fef2f2;color:#dc2626;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:700">Épuisé</span>`)
+        : `<span style="background:var(--bg);color:var(--muted);font-size:11px;padding:2px 8px;border-radius:12px">Non suivi</span>`;
+      return `<tr>
+        <td style="font-weight:500">${p.name}</td>
+        <td>${p.price} €</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <input type="number" min="0" step="1" value="${stockVal}" placeholder="—"
+              style="width:72px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)"
+              class="stock-input" data-id="${p.id}" />
+            <button class="btn btn-secondary btn-sm save-stock" data-id="${p.id}">Sauvegarder</button>
+            ${statusBadge}
+          </div>
+        </td>
+        <td><button class="btn btn-danger btn-sm del-product" data-id="${p.id}">Supprimer</button></td>
+      </tr>`;
+    }).join('');
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="4"><div class="empty">${e.message}</div></td></tr>`;
   }
@@ -1727,6 +1847,16 @@ document.addEventListener('click', async e => {
     return;
   }
 
+  // Sort notifications history table
+  const notifSortTh = e.target.closest('#tab-push th.sortable');
+  if (notifSortTh) {
+    const col = notifSortTh.dataset.sort;
+    _notifSortDir = (_notifSortCol === col && _notifSortDir === 'asc') ? 'desc' : 'asc';
+    _notifSortCol = col;
+    sortAndRenderNotifs();
+    return;
+  }
+
   // Open edit user modal
   const editUser = e.target.closest('.edit-user');
   if (editUser) {
@@ -1771,6 +1901,25 @@ document.addEventListener('click', async e => {
     return;
   }
 
+  const saveStock = e.target.closest('.save-stock');
+  if (saveStock) {
+    const id = saveStock.dataset.id;
+    const input = document.querySelector(`.stock-input[data-id="${id}"]`);
+    const raw = input.value.trim();
+    const stock = raw === '' ? null : parseInt(raw, 10);
+    if (raw !== '' && (isNaN(stock) || stock < 0)) {
+      toast('Valeur de stock invalide.', 'err'); return;
+    }
+    saveStock.disabled = true;
+    try {
+      await req('/admin/products/' + id + '/stock', { method: 'PATCH', body: JSON.stringify({ stock }) });
+      toast('Stock mis à jour.');
+      loadProducts();
+    } catch(e) { toast(e.message, 'err'); }
+    finally { saveStock.disabled = false; }
+    return;
+  }
+
   const delProduct = e.target.closest('.del-product');
   if (delProduct) {
     if (!confirm('Supprimer ce produit ?')) return;
@@ -1778,6 +1927,17 @@ document.addEventListener('click', async e => {
       await req('/admin/products/' + delProduct.dataset.id, { method: 'DELETE' });
       toast('Produit supprimé.');
       loadProducts();
+    } catch(e) { toast(e.message, 'err'); }
+    return;
+  }
+
+  const delDocument = e.target.closest('.del-document');
+  if (delDocument) {
+    if (!confirm(`Supprimer le document « ${delDocument.dataset.title} » ?`)) return;
+    try {
+      await req('/admin/documents/' + delDocument.dataset.id, { method: 'DELETE' });
+      toast('Document supprimé.');
+      loadDocuments();
     } catch(e) { toast(e.message, 'err'); }
     return;
   }
@@ -2038,26 +2198,94 @@ async function loadCampaigns() {
   }
 }
 
+/* ── DOCUMENTS ─────────────────────────────────────── */
+async function loadDocuments() {
+  const tbody = document.getElementById('docsTbody');
+  if (!tbody) return;
+  try {
+    const docs = await req('/admin/documents');
+    if (!docs.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center">Aucun document uploadé.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = docs.map(d => {
+      const kb = d.fileSize < 1024 * 1024
+        ? (d.fileSize / 1024).toFixed(0) + ' Ko'
+        : (d.fileSize / 1024 / 1024).toFixed(1) + ' Mo';
+      return `<tr>
+        <td>
+          <a href="${d.fileUrl}" target="_blank" rel="noopener"
+            style="color:var(--pink);font-weight:500;text-decoration:none">${escHtml(d.title)}</a>
+        </td>
+        <td><span style="background:var(--blue-lt);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:12px">${escHtml(d.category)}</span></td>
+        <td style="color:var(--muted)">${kb}</td>
+        <td style="color:var(--muted);font-size:12.5px;white-space:nowrap">${fmt(d.uploadedAt)}</td>
+        <td><button class="btn btn-danger btn-sm del-document" data-id="${d.id}" data-title="${escHtml(d.title)}">Supprimer</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--red)">Erreur de chargement.</td></tr>`;
+  }
+}
+
+document.getElementById('uploadDocBtn')?.addEventListener('click', async () => {
+  const fileInput = document.getElementById('doc_file');
+  const file = fileInput.files?.[0];
+  if (!file) { toast('Sélectionnez un fichier PDF.', 'err'); return; }
+  if (!file.name.toLowerCase().endsWith('.pdf')) { toast('Seuls les fichiers PDF sont acceptés.', 'err'); return; }
+
+  const btn = document.getElementById('uploadDocBtn');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('title', document.getElementById('doc_title').value.trim() || file.name.replace(/\.pdf$/i, ''));
+    form.append('category', document.getElementById('doc_category').value);
+
+    const res2 = await fetch('/api/v1/admin/documents', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token },
+      body: form,
+    });
+    if (!res2.ok) {
+      const err = await res2.json().catch(() => ({}));
+      throw new Error(err.message || 'Erreur upload');
+    }
+    toast('Document uploadé !');
+    document.getElementById('doc_title').value = '';
+    fileInput.value = '';
+    loadDocuments();
+  } catch(e) {
+    toast(e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer le document';
+  }
+});
+
+document.getElementById('clearNotifHistoryBtn')?.addEventListener('click', async () => {
+  if (!confirm('Vider tout l\'historique des notifications ? Cette action est irréversible.')) return;
+  const btn = document.getElementById('clearNotifHistoryBtn');
+  btn.disabled = true;
+  try {
+    await req('/admin/notifications', { method: 'DELETE' });
+    toast('Historique vidé.');
+    loadNotifHistory();
+  } catch(e) {
+    toast('Erreur lors de la suppression.', true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 async function loadNotifHistory() {
   const tbody = document.getElementById('notif-history-body');
   if (!tbody) return;
   try {
-    const items = await req('/admin/notifications');
-    if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucune notification envoyée</td></tr>';
-      return;
-    }
-    tbody.innerHTML = items.map(n => {
-      const type = (n.data?.type === 'INAPP')
-        ? '<span style="background:#1e3a5f;color:#7fc5ff;font-size:11px;padding:2px 8px;border-radius:12px">In-App</span>'
-        : '<span style="background:#2d1e3a;color:#c57fff;font-size:11px;padding:2px 8px;border-radius:12px">Push</span>';
-      return `<tr>
-        <td>${type}</td>
-        <td style="font-weight:500">${n.title}</td>
-        <td style="color:var(--muted);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${n.body}</td>
-        <td style="white-space:nowrap">${fmt(n.createdAt)}</td>
-      </tr>`;
-    }).join('');
+    _notifCache = await req('/admin/notifications');
+    sortAndRenderNotifs();
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="4" style="color:var(--red)">Erreur de chargement</td></tr>';
   }

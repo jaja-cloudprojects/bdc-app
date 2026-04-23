@@ -9,6 +9,7 @@ datasource db {
 
 enum Role {
   STUDENT
+  FORMATRICE
   ADMIN
 }
 
@@ -75,6 +76,7 @@ model Product {
   gallery     String[]  @default([])
   isNew       Boolean   @default(false)
   inStock     Boolean   @default(true)
+  stock       Int?
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
   createdAt   DateTime  @default(now())

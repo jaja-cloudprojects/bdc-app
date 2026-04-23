@@ -178,7 +178,7 @@ export interface StudentUser {
   firstName: string;
   lastName: string;
   avatarUrl?: string;
-  role: 'STUDENT' | 'ADMIN';
+  role: 'STUDENT' | 'FORMATRICE' | 'ADMIN';
 }
 
 export interface UpdateProfilePayload {

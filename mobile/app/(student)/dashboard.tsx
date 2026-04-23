@@ -62,11 +62,10 @@ export default function DashboardScreen() {
     { label: 'Tableau de bord', onPress: () => router.push('/(student)/dashboard' as any) },
     { label: 'Mes documents', onPress: () => router.push('/(student)/documents' as any) },
     { label: 'Mon profil', onPress: () => router.push('/(student)/profile' as any) },
-    { label: 'Fiches pratiques', onPress: () => router.push('/(student)/practical-sheets' as any) },
+    { label: 'Masterclasses', onPress: () => router.push('/(student)/practical-sheets' as any) },
     { label: 'Besoin d\'aide', onPress: () => router.push('/(student)/help' as any) },
     { label: 'Chat support', onPress: () => router.push('/(student)/chat' as any) },
     { label: 'Retour à la boutique', onPress: () => router.push('/') },
-    { label: 'Déconnexion', onPress: logout },
   ];
 
   return (
@@ -138,7 +137,7 @@ export default function DashboardScreen() {
               onPress={() => router.push('/(student)/profile' as any)}
             />
             <ActionTile
-              label="Fiches pratiques"
+              label="Masterclasses"
               color={Colors.tileTeal}
               onPress={() => router.push('/(student)/practical-sheets' as any)}
             />
@@ -214,6 +213,7 @@ export default function DashboardScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         items={menuItems}
+        logoutItem={{ label: 'Déconnexion', onPress: logout }}
       />
     </View>
   );

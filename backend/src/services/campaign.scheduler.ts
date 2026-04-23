@@ -43,12 +43,14 @@ export function unregisterRecurring(campaignId: string): void {
   }
 }
 
-// Single cron task running every minute — checks for due one-time campaigns
-let oneTimePollTask: ReturnType<typeof cron.schedule> | null = null;
+// One-time poll: setInterval instead of node-cron to avoid missed-execution flood on Docker resume
+let oneTimePollTimer: NodeJS.Timeout | null = null;
+let pollRunning = false;
 
-function startOneTimePoll(): void {
-  if (oneTimePollTask) return;
-  oneTimePollTask = cron.schedule('* * * * *', async () => {
+async function pollOneTimeCampaigns(): Promise<void> {
+  if (pollRunning) return; // prevent concurrent runs
+  pollRunning = true;
+  try {
     const due = await prisma.notificationCampaign.findMany({
       where: {
         isActive: true,
@@ -62,7 +64,20 @@ function startOneTimePoll(): void {
         console.error(`[campaign] one-time error ${campaign.id}:`, e)
       );
     }
-  });
+  } catch (e) {
+    console.error('[campaign] poll error:', e);
+  } finally {
+    pollRunning = false;
+  }
+}
+
+function startOneTimePoll(): void {
+  if (oneTimePollTimer) return;
+  oneTimePollTimer = setInterval(() => {
+    pollOneTimeCampaigns().catch((e) => console.error('[campaign] poll error:', e));
+  }, 60_000);
+  // Don't hold the process open just for the poller
+  oneTimePollTimer.unref();
 }
 
 export async function initScheduler(): Promise<void> {
@@ -74,7 +89,7 @@ export async function initScheduler(): Promise<void> {
     registerRecurring(c);
   }
 
-  // Start the one-time campaign poller
+  // Start the one-time campaign poller (runs once per minute, no missed-execution warnings)
   startOneTimePoll();
 
   console.log(`[campaign] scheduler ready — ${recurring.length} recurring campaign(s) registered`);
