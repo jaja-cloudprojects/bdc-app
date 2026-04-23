@@ -3,10 +3,12 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import path from 'path';
 import fs from 'fs';
+import cron from 'node-cron';
 import { prisma } from '../config/database';
 import { requireAdmin, AuthedRequest } from '../middleware/auth';
 import { upload, fileUrl } from '../middleware/upload';
 import { broadcastPush, sendPushToUsers } from '../services/notification.service';
+import { registerRecurring, unregisterRecurring, fireCampaign } from '../services/campaign.scheduler';
 
 const router = Router();
 
@@ -219,17 +221,60 @@ const masterclassSchema = z.object({
   capacity: z.number().int().positive().default(10),
 });
 
+router.get('/masterclass', async (_req, res, next) => {
+  try {
+    const list = await prisma.masterclass.findMany({
+      where: { date: { gte: new Date() } },
+      orderBy: { date: 'asc' },
+      include: { _count: { select: { reservations: true } } },
+    });
+    res.json(list);
+  } catch (e) { next(e); }
+});
+
+router.get('/masterclass/:id/students', async (req, res, next) => {
+  try {
+    const reservations = await prisma.reservation.findMany({
+      where: { masterclassId: req.params.id },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(reservations);
+  } catch (e) { next(e); }
+});
+
+router.delete('/masterclass/:id/reservation/:reservationId', async (req, res, next) => {
+  try {
+    await prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { id: req.params.reservationId },
+      });
+      if (!reservation || reservation.masterclassId !== req.params.id) {
+        throw Object.assign(new Error('Réservation introuvable'), { status: 404 });
+      }
+      await tx.reservation.delete({ where: { id: req.params.reservationId } });
+      await tx.masterclass.update({
+        where: { id: req.params.id },
+        data: { spotsAvailable: { increment: 1 } },
+      });
+    });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 router.post('/masterclass', async (req, res, next) => {
   try {
     const data = masterclassSchema.parse(req.body);
     const mc = await prisma.masterclass.create({
-  data: {
-    ...data,
-    date: new Date(data.date),
-    endDate: data.endDate ? new Date(data.endDate) : null,
-    spotsAvailable: data.capacity,
-  } as any,
-});
+      data: {
+        ...data,
+        date: new Date(data.date),
+        endDate: data.endDate ? new Date(data.endDate) : null,
+        spotsAvailable: data.capacity,
+      } as any,
+    });
     res.status(201).json(mc);
   } catch (e) { next(e); }
 });
@@ -426,6 +471,104 @@ router.post('/conversations/:id/messages', async (req: AuthedRequest, res, next)
       senderName,
       createdAt: msg.createdAt.toISOString(),
     });
+  } catch (e) { next(e); }
+});
+
+// ============================================================================
+// NOTIFICATION CAMPAIGNS
+// ============================================================================
+const campaignSchema = z.object({
+  name: z.string().min(1),
+  title: z.string().min(1).max(120),
+  body: z.string().min(1).max(400),
+  isRecurring: z.boolean().default(false),
+  cronExpr: z.string().optional(),
+  scheduledAt: z.string().datetime().optional(),
+  isActive: z.boolean().default(true),
+});
+
+router.get('/campaigns', async (_req, res, next) => {
+  try {
+    const campaigns = await prisma.notificationCampaign.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(campaigns);
+  } catch (e) { next(e); }
+});
+
+router.post('/campaigns', async (req, res, next) => {
+  try {
+    const data = campaignSchema.parse(req.body);
+
+    if (data.isRecurring && data.cronExpr && !cron.validate(data.cronExpr)) {
+      return res.status(400).json({ message: 'Expression cron invalide.' });
+    }
+
+    const campaign = await prisma.notificationCampaign.create({
+      data: {
+        name: data.name,
+        title: data.title,
+        body: data.body,
+        isRecurring: data.isRecurring,
+        cronExpr: data.isRecurring ? (data.cronExpr ?? null) : null,
+        scheduledAt: !data.isRecurring && data.scheduledAt ? new Date(data.scheduledAt) : null,
+        isActive: data.isActive,
+      },
+    });
+
+    if (campaign.isActive && campaign.isRecurring) {
+      registerRecurring(campaign);
+    }
+
+    res.status(201).json(campaign);
+  } catch (e) { next(e); }
+});
+
+router.patch('/campaigns/:id', async (req, res, next) => {
+  try {
+    const data = campaignSchema.partial().parse(req.body);
+
+    if (data.cronExpr && !cron.validate(data.cronExpr)) {
+      return res.status(400).json({ message: 'Expression cron invalide.' });
+    }
+
+    const campaign = await prisma.notificationCampaign.update({
+      where: { id: req.params.id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.body !== undefined && { body: data.body }),
+        ...(data.isRecurring !== undefined && { isRecurring: data.isRecurring }),
+        ...(data.cronExpr !== undefined && { cronExpr: data.cronExpr }),
+        ...(data.scheduledAt !== undefined && { scheduledAt: new Date(data.scheduledAt) }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+      },
+    });
+
+    // Re-sync scheduler
+    if (campaign.isActive && campaign.isRecurring) {
+      registerRecurring(campaign);
+    } else {
+      unregisterRecurring(campaign.id);
+    }
+
+    res.json(campaign);
+  } catch (e) { next(e); }
+});
+
+router.delete('/campaigns/:id', async (req, res, next) => {
+  try {
+    unregisterRecurring(req.params.id);
+    await prisma.notificationCampaign.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.post('/campaigns/:id/send', async (req, res, next) => {
+  try {
+    await fireCampaign(req.params.id);
+    const campaign = await prisma.notificationCampaign.findUnique({ where: { id: req.params.id } });
+    res.json(campaign);
   } catch (e) { next(e); }
 });
 

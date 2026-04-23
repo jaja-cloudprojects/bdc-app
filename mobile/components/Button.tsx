@@ -149,8 +149,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.6,
   },
   disabled: {
     opacity: 0.5,

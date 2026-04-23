@@ -56,7 +56,7 @@ export default function RootLayout() {
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: Colors.background },
-                animation: 'fade',
+                animation: 'ios_from_right',
               }}
             >
               <Stack.Screen name="index" />

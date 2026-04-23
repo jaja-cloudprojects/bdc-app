@@ -68,7 +68,7 @@ export default function ChatScreen() {
     queryKey: ['chat', 'messages'],
     queryFn: async () => (await api.chat.history()).data,
     placeholderData: FALLBACK_MESSAGES,
-    refetchInterval: 10_000,
+    refetchInterval: 2_000,
   });
 
   useEffect(() => {

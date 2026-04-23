@@ -172,6 +172,23 @@ model Notification {
   @@index([userId])
 }
 
+model NotificationCampaign {
+  id          String    @id @default(cuid())
+  name        String
+  title       String
+  body        String
+  isRecurring Boolean   @default(false)
+  cronExpr    String?
+  scheduledAt DateTime?
+  isActive    Boolean   @default(true)
+  lastSentAt  DateTime?
+  sentCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, isRecurring])
+}
+
 generator client {
   provider = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x"]

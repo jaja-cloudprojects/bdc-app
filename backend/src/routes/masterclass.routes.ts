@@ -5,6 +5,22 @@ import { sendPushToUsers } from '../services/notification.service';
 
 const router = Router();
 
+router.get('/my-reservations', requireAuth, async (req: AuthedRequest, res, next) => {
+  try {
+    const userId = req.user!.sub;
+    const reservations = await prisma.reservation.findMany({
+      where: { userId },
+      include: {
+        masterclass: {
+          select: { id: true, title: true, date: true, endDate: true, location: true, spotsAvailable: true },
+        },
+      },
+      orderBy: { masterclass: { date: 'asc' } },
+    });
+    res.json(reservations);
+  } catch (e) { next(e); }
+});
+
 router.get('/upcoming', async (_req, res, next) => {
   try {
     const items = await prisma.masterclass.findMany({
@@ -16,6 +32,29 @@ router.get('/upcoming', async (_req, res, next) => {
   } catch (e) {
     next(e);
   }
+});
+
+router.delete('/:id/reserve', requireAuth, async (req: AuthedRequest, res, next) => {
+  try {
+    const userId = req.user!.sub;
+    const masterclassId = req.params.id;
+
+    await prisma.$transaction(async (tx) => {
+      const reservation = await tx.reservation.findUnique({
+        where: { userId_masterclassId: { userId, masterclassId } },
+      });
+      if (!reservation) {
+        throw Object.assign(new Error('Réservation introuvable'), { status: 404 });
+      }
+      await tx.reservation.delete({ where: { id: reservation.id } });
+      await tx.masterclass.update({
+        where: { id: masterclassId },
+        data: { spotsAvailable: { increment: 1 } },
+      });
+    });
+
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 router.post('/:id/reserve', requireAuth, async (req: AuthedRequest, res, next) => {

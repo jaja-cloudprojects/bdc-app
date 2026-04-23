@@ -18,6 +18,7 @@ import chatRoutes from './routes/chat.routes';
 import documentsRoutes from './routes/documents.routes';
 import adminRoutes from './routes/admin.routes';
 import notificationsRoutes from './routes/notifications.routes';
+import { initScheduler } from './services/campaign.scheduler';
 
 const app = express();
 
@@ -118,6 +119,7 @@ const server = app.listen(env.port, () => {
   console.log(`🚀 BDC API listening on http://localhost:${env.port}`);
   console.log(`📚 Admin panel: http://localhost:${env.port}/admin`);
   console.log(`❤️  Health:      http://localhost:${env.port}/health`);
+  initScheduler().catch((e) => console.error('[campaign] scheduler init error:', e));
 });
 
 // Graceful shutdown

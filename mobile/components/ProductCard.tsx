@@ -80,8 +80,7 @@ const styles = StyleSheet.create({
     ...Elevation.sm,
   },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.6,
   },
   placeholder: {
     backgroundColor: Colors.backgroundCard,

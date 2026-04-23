@@ -31,3 +31,15 @@ export const uploadDir = uploadRoot;
 export function fileUrl(filename: string) {
   return `${env.publicBaseUrl}/uploads/${filename}`;
 }
+
+// Memory-based upload for avatar → buffer passed directly to Supabase, nothing written to disk
+export const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max for avatars
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    const ok = allowed.test(file.mimetype) || allowed.test(path.extname(file.originalname).toLowerCase());
+    if (ok) cb(null, true);
+    else cb(new Error('Format non supporté (jpg, png, webp)'));
+  },
+});

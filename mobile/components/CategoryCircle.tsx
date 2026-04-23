@@ -53,8 +53,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   pressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.96 }],
+    opacity: 0.5,
   },
   circle: {
     overflow: 'hidden',

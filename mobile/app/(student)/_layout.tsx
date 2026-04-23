@@ -43,7 +43,7 @@ export default function StudentLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
-          animation: 'slide_from_right',
+          animation: 'ios_from_right',
         }}
       >
         <Stack.Screen name="dashboard" />

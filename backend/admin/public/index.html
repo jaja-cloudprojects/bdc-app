@@ -142,15 +142,22 @@
 
     .nav-badge {
       margin-left: auto;
-      background: var(--pink);
+      background: #E8586E;
       color: #fff;
       border-radius: 10px;
-      padding: 1px 7px;
+      padding: 2px 7px;
       font-size: 11px;
       font-weight: 700;
-      min-width: 18px;
+      min-width: 20px;
       text-align: center;
       line-height: 16px;
+      animation: badge-pop .25s ease;
+    }
+
+    @keyframes badge-pop {
+      0%   { transform: scale(0.5); opacity: 0; }
+      70%  { transform: scale(1.2); }
+      100% { transform: scale(1);   opacity: 1; }
     }
 
     .nav-icon { width: 18px; text-align: center; flex-shrink: 0; }
@@ -276,6 +283,12 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
+    }
+    .avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
 
     .user-cell { display: flex; align-items: center; gap: 10px; }
@@ -732,7 +745,7 @@
         <div class="card">
           <div class="card-title">Nouveau produit</div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Slug</label><input id="p_slug" type="text" placeholder="mon-produit" /></div>
+            <div class="form-group"><label class="form-label">Identifiant URL</label><input id="p_slug" type="text" placeholder="mon-produit" /></div>
             <div class="form-group"><label class="form-label">Nom</label><input id="p_name" type="text" placeholder="Nom du produit" /></div>
           </div>
           <div class="form-row">
@@ -756,7 +769,7 @@
         <div class="card">
           <div class="card-title">Nouvelle catégorie</div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Slug</label><input id="c_slug" type="text" /></div>
+            <div class="form-group"><label class="form-label">Identifiant URL</label><input id="c_slug" type="text" /></div>
             <div class="form-group"><label class="form-label">Nom</label><input id="c_name" type="text" /></div>
           </div>
           <div class="form-group"><label class="form-label">Image URL</label><input id="c_img" type="text" placeholder="https://…" /></div>
@@ -765,7 +778,7 @@
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Nom</th><th>Slug</th><th></th></tr></thead>
+              <thead><tr><th>Nom</th><th>Identifiant URL</th><th></th></tr></thead>
               <tbody id="catsTbody"></tbody>
             </table>
           </div>
@@ -809,7 +822,7 @@
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Titre</th><th>Date</th><th>Places</th><th></th></tr></thead>
+              <thead><tr><th>Titre</th><th>Date</th><th>Places</th><th>Inscrits</th><th></th></tr></thead>
               <tbody id="mcTbody"></tbody>
             </table>
           </div>
@@ -837,23 +850,87 @@
             <button id="sendInAppBtn" class="btn btn-primary">Envoyer la notification</button>
           </div>
 
-          <!-- Push (coming soon) -->
-          <div class="card" style="flex:1;min-width:280px;max-width:480px;opacity:0.55">
-            <div class="card-title">Notification Push <span style="font-size:11px;background:var(--border);color:var(--muted);padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle">Bientôt</span></div>
+          <!-- Push (enabled) -->
+          <div class="card" style="flex:1;min-width:280px;max-width:480px">
+            <div class="card-title">Notification Push</div>
             <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
               Envoi via Expo Push Notifications — apparaît même lorsque l'app est fermée.
             </p>
             <div class="form-group">
               <label class="form-label">Titre</label>
-              <input id="push_title" type="text" placeholder="Ex : Nouvelle masterclass disponible" disabled />
+              <input id="push_title" type="text" placeholder="Ex : Nouvelle masterclass disponible" maxlength="120" />
             </div>
             <div class="form-group">
               <label class="form-label">Message</label>
-              <textarea id="push_body" placeholder="..." disabled></textarea>
+              <textarea id="push_body" placeholder="Ex : Profitez de -20% sur toutes les extensions !" maxlength="400"></textarea>
             </div>
-            <button id="sendPushBtn" class="btn btn-primary" disabled>Envoyer à tous les appareils</button>
+            <button id="sendPushBtn" class="btn btn-primary">Envoyer à tous les appareils</button>
           </div>
 
+        </div>
+
+        <!-- Campaigns -->
+        <div class="card" style="margin-top:24px">
+          <div class="card-title">Campagnes de notifications push</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:18px">
+            Planifiez des envois automatiques — uniques (à une date précise) ou récurrents (selon un calendrier).
+          </p>
+
+          <!-- Create campaign form -->
+          <details id="campaignFormDetails" style="margin-bottom:20px">
+            <summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;user-select:none">+ Nouvelle campagne</summary>
+            <div style="margin-top:14px;padding:16px;background:var(--bg);border-radius:10px">
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Nom interne</label><input id="camp_name" type="text" placeholder="Ex : Promo printemps" /></div>
+                <div class="form-group"><label class="form-label">Titre push</label><input id="camp_title" type="text" placeholder="Ex : Offre spéciale !" maxlength="120" /></div>
+              </div>
+              <div class="form-group"><label class="form-label">Message push</label><textarea id="camp_body" placeholder="Ex : Profitez de -20% ce week-end uniquement." maxlength="400"></textarea></div>
+              <div class="form-row" style="gap:24px;align-items:flex-start">
+                <div class="form-group" style="flex:0 0 auto">
+                  <label class="form-label">Type</label>
+                  <div style="display:flex;gap:16px;margin-top:6px">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+                      <input type="radio" name="camp_type" value="once" checked id="camp_type_once" /> Unique
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:14px">
+                      <input type="radio" name="camp_type" value="recurring" id="camp_type_recurring" /> Récurrente
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group" id="camp_once_group" style="flex:1">
+                  <label class="form-label">Date et heure d'envoi</label>
+                  <input id="camp_scheduled_at" type="datetime-local" />
+                </div>
+                <div class="form-group" id="camp_recurring_group" style="flex:1;display:none">
+                  <label class="form-label">Fréquence</label>
+                  <select id="camp_cron_preset" style="width:100%;padding:9px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:14px">
+                    <option value="0 9 * * *">Quotidienne à 9h</option>
+                    <option value="0 9 * * 1">Hebdomadaire (lundi 9h)</option>
+                    <option value="0 9 * * 5">Hebdomadaire (vendredi 9h)</option>
+                    <option value="0 9 1 * *">Mensuelle (1er du mois, 9h)</option>
+                    <option value="0 18 * * 5">Vendredi soir (18h)</option>
+                    <option value="custom">Personnalisée…</option>
+                  </select>
+                  <input id="camp_cron_custom" type="text" placeholder="ex: 0 9 * * 1-5" style="margin-top:8px;display:none" />
+                  <span style="font-size:11px;color:var(--muted);display:block;margin-top:4px" id="camp_cron_preview"></span>
+                </div>
+              </div>
+              <button id="createCampaignBtn" class="btn btn-primary" style="margin-top:4px">Créer la campagne</button>
+            </div>
+          </details>
+
+          <!-- Campaigns list -->
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Nom</th><th>Titre push</th><th>Type</th><th>Planification</th>
+                <th>Dernier envoi</th><th>Envois</th><th>Statut</th><th></th>
+              </tr></thead>
+              <tbody id="campaignsTbody">
+                <tr><td colspan="8" style="color:var(--muted);text-align:center">Chargement…</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- History -->
@@ -905,6 +982,19 @@
   </div><!-- /main -->
 
 </div><!-- /app -->
+
+<!-- ═══════════════════ MODAL INSCRITS MASTERCLASS ══ -->
+<div id="studentsModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="studentsModalTitle">Inscrits</span>
+      <button class="modal-close" data-close="studentsModal">✕</button>
+    </div>
+    <div id="studentsModalContent">
+      <p style="color:var(--muted);text-align:center">Chargement…</p>
+    </div>
+  </div>
+</div>
 
 <!-- ═══════════════════ MODAL EDIT USER ═════════════ -->
 <div id="editUserModal" class="modal-overlay hidden">
@@ -1074,7 +1164,7 @@ const LOADERS = {
   categories: loadCategories,
   news:      loadNews,
   masterclass: loadMasterclass,
-  push: loadNotifHistory,
+  push: () => { loadNotifHistory(); loadCampaigns(); },
   messages: loadConversations,
 };
 
@@ -1082,11 +1172,7 @@ function showTab(tab) {
   if (tab !== 'messages') {
     clearInterval(_convPollTimer);
     _convPollTimer = null;
-    clearInterval(_tabPollTimer);
-    _tabPollTimer  = null;
     _activeConvId  = null;
-  } else {
-    _startTabPoll();
   }
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1188,7 +1274,9 @@ function sortAndRender() {
     <tr>
       <td>
         <div class="user-cell">
-          <div class="avatar">${u.firstName.charAt(0).toUpperCase()}</div>
+          <div class="avatar">${u.avatarUrl
+            ? `<img src="${u.avatarUrl}" alt="${u.firstName}" onerror="this.parentElement.textContent='${u.firstName.charAt(0).toUpperCase()}'">`
+            : u.firstName.charAt(0).toUpperCase()}</div>
           <div><div class="user-name">${u.firstName} ${u.lastName}</div></div>
         </div>
       </td>
@@ -1342,26 +1430,58 @@ async function loadNews() {
 async function loadMasterclass() {
   const tbody = document.getElementById('mcTbody');
   try {
-    const list = await req('/masterclass/upcoming');
+    const list = await req('/admin/masterclass');
     tbody.innerHTML = list.length
       ? list.map(m => `<tr>
           <td>${m.title}</td>
           <td style="color:var(--muted);font-size:12.5px">${fmt(m.date)}</td>
           <td>${m.spotsAvailable} places</td>
+          <td>
+            <button class="btn btn-secondary btn-sm view-mc-students" data-id="${m.id}" data-title="${m.title.replace(/"/g,'&quot;')}">
+              ${m._count.reservations} inscrit${m._count.reservations !== 1 ? 's' : ''}
+            </button>
+          </td>
           <td><button class="btn btn-danger btn-sm del-mc" data-id="${m.id}">Supprimer</button></td>
         </tr>`).join('')
-      : '<tr><td colspan="4"><div class="empty">Aucune masterclass à venir.</div></td></tr>';
+      : '<tr><td colspan="5"><div class="empty">Aucune masterclass à venir.</div></td></tr>';
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">${e.message}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">${e.message}</div></td></tr>`;
+  }
+}
+
+async function loadMCStudents(mcId, mcTitle) {
+  document.getElementById('studentsModalTitle').textContent = 'Inscrits — ' + mcTitle;
+  document.getElementById('studentsModalContent').innerHTML = '<p style="color:var(--muted);text-align:center">Chargement…</p>';
+  openModal('studentsModal');
+  try {
+    const students = await req('/admin/masterclass/' + mcId + '/students');
+    if (!students.length) {
+      document.getElementById('studentsModalContent').innerHTML = '<p style="color:var(--muted);text-align:center">Aucun inscrit.</p>';
+      return;
+    }
+    document.getElementById('studentsModalContent').innerHTML = `
+      <table>
+        <thead><tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th></th></tr></thead>
+        <tbody>
+          ${students.map(r => `<tr>
+            <td>${r.user.firstName} ${r.user.lastName}</td>
+            <td style="color:var(--muted);font-size:12.5px">${r.user.email}</td>
+            <td style="color:var(--muted);font-size:12.5px">${fmt(r.createdAt)}</td>
+            <td><button class="btn btn-danger btn-sm del-mc-student" data-mc-id="${mcId}" data-res-id="${r.id}" data-name="${r.user.firstName} ${r.user.lastName}">Retirer</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('studentsModalContent').innerHTML = `<p style="color:var(--danger,#e74c3c);text-align:center">${e.message}</p>`;
   }
 }
 
 /* ── MESSAGES ──────────────────────────────────────── */
-let _activeConvId   = null;
-let _convPollTimer  = null;   // poll fil actif
-let _tabPollTimer   = null;   // poll liste (tab ouvert)
-let _adminUser      = null;   // profil admin connecté
-let _seenTimestamps = JSON.parse(localStorage.getItem('bdc_conv_seen') || '{}');
+let _activeConvId    = null;
+let _convPollTimer   = null;   // poll fil de discussion actif
+let _globalPollTimer = null;   // poll conversations (toujours actif)
+let _adminUser       = null;   // profil admin connecté
+let _seenTimestamps  = JSON.parse(localStorage.getItem('bdc_conv_seen') || '{}');
 
 function fmtTime(d) {
   const date = new Date(d);
@@ -1401,10 +1521,17 @@ async function loadConversations() {
     const unreadTotal = convs.filter(c => _isUnread(c)).length;
     const navBtn = document.querySelector('.nav-item[data-tab="messages"]');
     if (navBtn) {
-      let nb = navBtn.querySelector('.nav-badge');
+      const nb = navBtn.querySelector('.nav-badge');
+      const prevCount = nb ? parseInt(nb.textContent) : 0;
       if (unreadTotal > 0) {
-        if (!nb) { nb = document.createElement('span'); nb.className = 'nav-badge'; navBtn.appendChild(nb); }
-        nb.textContent = unreadTotal;
+        if (unreadTotal !== prevCount) {
+          // Recréer pour déclencher l'animation à chaque nouveau message
+          if (nb) nb.remove();
+          const newBadge = document.createElement('span');
+          newBadge.className = 'nav-badge';
+          newBadge.textContent = unreadTotal;
+          navBtn.appendChild(newBadge);
+        }
       } else if (nb) nb.remove();
     }
 
@@ -1453,20 +1580,7 @@ async function openConversation(convId) {
   await loadChatThread(convId);
 
   clearInterval(_convPollTimer);
-  _convPollTimer = setInterval(() => {
-    loadChatThread(convId);
-    loadConversations();
-  }, 5000);
-}
-
-function _startTabPoll() {
-  clearInterval(_tabPollTimer);
-  _tabPollTimer = setInterval(loadConversations, 10_000);
-}
-
-function _stopTabPoll() {
-  clearInterval(_tabPollTimer);
-  _tabPollTimer = null;
+  _convPollTimer = setInterval(() => loadChatThread(convId), 2_000);
 }
 
 async function loadChatThread(convId) {
@@ -1538,6 +1652,17 @@ async function sendAdminMessage() {
   }
 }
 
+/* ── SHOW LOGIN ────────────────────────────────────── */
+function showLogin() {
+  token = null; refreshToken = null;
+  localStorage.removeItem('bdc_admin_token');
+  localStorage.removeItem('bdc_admin_refresh');
+  document.getElementById('login-page').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  clearInterval(_globalPollTimer);
+  clearInterval(_convPollTimer);
+}
+
 /* ── BOOT ──────────────────────────────────────────── */
 async function boot() {
   document.getElementById('login-page').classList.add('hidden');
@@ -1545,6 +1670,10 @@ async function boot() {
   if (!_adminUser) {
     try { _adminUser = await req('/auth/me'); } catch { /* ignore */ }
   }
+  // Poll conversations en permanence pour maintenir le badge à jour
+  clearInterval(_globalPollTimer);
+  loadConversations();
+  _globalPollTimer = setInterval(loadConversations, 3_000);
   showTab('dashboard');
 }
 
@@ -1730,6 +1859,27 @@ document.addEventListener('click', async e => {
     return;
   }
 
+  const viewStudents = e.target.closest('.view-mc-students');
+  if (viewStudents) {
+    loadMCStudents(viewStudents.dataset.id, viewStudents.dataset.title);
+    return;
+  }
+
+  const delStudent = e.target.closest('.del-mc-student');
+  if (delStudent) {
+    if (!confirm(`Retirer ${delStudent.dataset.name} de cette masterclass ?`)) return;
+    try {
+      await req('/admin/masterclass/' + delStudent.dataset.mcId + '/reservation/' + delStudent.dataset.resId, { method: 'DELETE' });
+      toast('Étudiant retiré.');
+      // Rafraîchir le modal et la liste
+      const modalTitle = document.getElementById('studentsModalTitle').textContent;
+      const mcTitle = modalTitle.replace(/^Inscrits — /, '');
+      loadMCStudents(delStudent.dataset.mcId, mcTitle);
+      loadMasterclass();
+    } catch(e) { toast(e.message, 'err'); }
+    return;
+  }
+
   // Send in-app notification
   if (e.target.id === 'sendInAppBtn') {
     const title = document.getElementById('inapp_title').value.trim();
@@ -1748,9 +1898,86 @@ document.addEventListener('click', async e => {
     return;
   }
 
-  // Send push (disabled — placeholder)
+  // Send push broadcast
   if (e.target.id === 'sendPushBtn') {
-    toast('Les notifications push seront disponibles prochainement.', 'err');
+    const title = document.getElementById('push_title').value.trim();
+    const body  = document.getElementById('push_body').value.trim();
+    if (!title || !body) { toast('Titre et message requis.', 'err'); return; }
+    const btn = e.target;
+    btn.disabled = true; btn.textContent = 'Envoi…';
+    try {
+      const res = await req('/admin/notifications/push', { method: 'POST', body: JSON.stringify({ title, body }) });
+      toast(`Push envoyé à ${res.sent} appareil(s).`);
+      document.getElementById('push_title').value = '';
+      document.getElementById('push_body').value  = '';
+      loadNotifHistory();
+    } catch(err) { toast(err.message, 'err'); }
+    finally { btn.disabled = false; btn.textContent = 'Envoyer à tous les appareils'; }
+    return;
+  }
+
+  // Create campaign
+  if (e.target.id === 'createCampaignBtn') {
+    const isRecurring = document.getElementById('camp_type_recurring').checked;
+    const preset = document.getElementById('camp_cron_preset').value;
+    const cronExpr = isRecurring
+      ? (preset === 'custom' ? document.getElementById('camp_cron_custom').value.trim() : preset)
+      : undefined;
+    const scheduledAt = !isRecurring
+      ? new Date(document.getElementById('camp_scheduled_at').value).toISOString()
+      : undefined;
+    const payload = {
+      name: document.getElementById('camp_name').value.trim(),
+      title: document.getElementById('camp_title').value.trim(),
+      body: document.getElementById('camp_body').value.trim(),
+      isRecurring,
+      ...(isRecurring ? { cronExpr } : { scheduledAt }),
+    };
+    if (!payload.name || !payload.title || !payload.body) { toast('Nom, titre et message requis.', 'err'); return; }
+    if (!isRecurring && !document.getElementById('camp_scheduled_at').value) { toast('Date d\'envoi requise.', 'err'); return; }
+    try {
+      await req('/admin/campaigns', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Campagne créée.');
+      document.getElementById('campaignFormDetails').removeAttribute('open');
+      ['camp_name','camp_title','camp_body','camp_scheduled_at'].forEach(id => document.getElementById(id).value = '');
+      loadCampaigns();
+    } catch(err) { toast(err.message, 'err'); }
+    return;
+  }
+
+  // Campaign: send now
+  const sendNow = e.target.closest('.camp-send-now');
+  if (sendNow) {
+    if (!confirm('Envoyer cette campagne maintenant à tous les appareils ?')) return;
+    try {
+      await req('/admin/campaigns/' + sendNow.dataset.id + '/send', { method: 'POST' });
+      toast('Campagne envoyée !');
+      loadCampaigns(); loadNotifHistory();
+    } catch(err) { toast(err.message, 'err'); }
+    return;
+  }
+
+  // Campaign: toggle active
+  const toggleCamp = e.target.closest('.camp-toggle');
+  if (toggleCamp) {
+    const newActive = toggleCamp.dataset.active === 'false';
+    try {
+      await req('/admin/campaigns/' + toggleCamp.dataset.id, { method: 'PATCH', body: JSON.stringify({ isActive: newActive }) });
+      toast(newActive ? 'Campagne activée.' : 'Campagne mise en pause.');
+      loadCampaigns();
+    } catch(err) { toast(err.message, 'err'); }
+    return;
+  }
+
+  // Campaign: delete
+  const delCamp = e.target.closest('.camp-delete');
+  if (delCamp) {
+    if (!confirm('Supprimer cette campagne définitivement ?')) return;
+    try {
+      await req('/admin/campaigns/' + delCamp.dataset.id, { method: 'DELETE' });
+      toast('Campagne supprimée.');
+      loadCampaigns();
+    } catch(err) { toast(err.message, 'err'); }
     return;
   }
 
@@ -1761,6 +1988,55 @@ document.addEventListener('click', async e => {
   // Send admin message
   if (e.target.id === 'chatSendBtn') { sendAdminMessage(); return; }
 });
+
+/* ── CAMPAIGNS ─────────────────────────────────────── */
+const CRON_LABELS = {
+  '0 9 * * *':   'Quotidienne à 9h',
+  '0 9 * * 1':   'Hebdomadaire lun. 9h',
+  '0 9 * * 5':   'Hebdomadaire ven. 9h',
+  '0 9 1 * *':   'Mensuelle (1er, 9h)',
+  '0 18 * * 5':  'Vendredi soir 18h',
+};
+
+async function loadCampaigns() {
+  const tbody = document.getElementById('campaignsTbody');
+  if (!tbody) return;
+  try {
+    const list = await req('/admin/campaigns');
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center">Aucune campagne.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(c => {
+      const typeLabel = c.isRecurring
+        ? '<span style="background:#1e3a1e;color:#7fc57f;font-size:11px;padding:2px 8px;border-radius:12px">Récurrente</span>'
+        : '<span style="background:#1e2a3a;color:#7fb5ff;font-size:11px;padding:2px 8px;border-radius:12px">Unique</span>';
+      const schedule = c.isRecurring
+        ? (CRON_LABELS[c.cronExpr] || c.cronExpr || '—')
+        : (c.scheduledAt ? fmt(c.scheduledAt) : '—');
+      const lastSent = c.lastSentAt ? fmt(c.lastSentAt) : '—';
+      const statusLabel = c.isActive
+        ? '<span style="color:#7fc57f;font-size:12px">● Actif</span>'
+        : '<span style="color:var(--muted);font-size:12px">⏸ Pause</span>';
+      return `<tr>
+        <td style="font-weight:500">${c.name}</td>
+        <td style="color:var(--muted);font-size:12.5px">${c.title}</td>
+        <td>${typeLabel}</td>
+        <td style="font-size:12.5px">${schedule}</td>
+        <td style="font-size:12.5px;color:var(--muted)">${lastSent}</td>
+        <td style="text-align:center">${c.sentCount}</td>
+        <td>${statusLabel}</td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-secondary btn-sm camp-send-now" data-id="${c.id}" title="Envoyer maintenant">▶ Envoyer</button>
+          <button class="btn btn-secondary btn-sm camp-toggle" data-id="${c.id}" data-active="${c.isActive}" title="${c.isActive ? 'Mettre en pause' : 'Activer'}">${c.isActive ? '⏸' : '▶'}</button>
+          <button class="btn btn-danger btn-sm camp-delete" data-id="${c.id}" title="Supprimer">✕</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color:var(--red)">${e.message}</td></tr>`;
+  }
+}
 
 async function loadNotifHistory() {
   const tbody = document.getElementById('notif-history-body');
@@ -1806,6 +2082,23 @@ document.addEventListener('input', e => {
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+});
+
+/* ── Campaign form interactivity ───────────────────── */
+document.addEventListener('change', e => {
+  // Toggle once/recurring fields
+  if (e.target.name === 'camp_type') {
+    const isRecurring = document.getElementById('camp_type_recurring').checked;
+    document.getElementById('camp_once_group').style.display      = isRecurring ? 'none' : '';
+    document.getElementById('camp_recurring_group').style.display = isRecurring ? '' : 'none';
+  }
+
+  // Show/hide custom cron input
+  if (e.target.id === 'camp_cron_preset') {
+    const isCustom = e.target.value === 'custom';
+    document.getElementById('camp_cron_custom').style.display = isCustom ? '' : 'none';
+    document.getElementById('camp_cron_preview').textContent  = isCustom ? '' : '';
   }
 });
 

@@ -8,7 +8,8 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
-import { upload, fileUrl } from '../middleware/upload';
+import { upload, avatarUpload } from '../middleware/upload';
+import { uploadAvatar } from '../config/supabase';
 
 const router = Router();
 
@@ -126,11 +127,12 @@ router.patch('/me', requireAuth, async (req: AuthedRequest, res, next) => {
   }
 });
 
-router.post('/avatar', requireAuth, upload.single('avatar'), async (req: AuthedRequest, res, next) => {
+router.post('/avatar', requireAuth, avatarUpload.single('avatar'), async (req: AuthedRequest, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Aucun fichier reçu.' });
 
-    const avatarUrl = fileUrl(req.file.filename);
+    const avatarUrl = await uploadAvatar(req.user!.sub, req.file.buffer, req.file.mimetype);
+
     await prisma.user.update({
       where: { id: req.user!.sub },
       data: { avatarUrl },

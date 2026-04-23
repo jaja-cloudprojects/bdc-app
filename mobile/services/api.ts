@@ -158,6 +158,20 @@ export interface Masterclass {
   spotsAvailable: number;
 }
 
+export interface MyReservation {
+  id: string;
+  status: string;
+  createdAt: string;
+  masterclass: {
+    id: string;
+    title: string;
+    date: string;
+    endDate?: string;
+    location?: string;
+    spotsAvailable: number;
+  };
+}
+
 export interface StudentUser {
   id: string;
   email: string;
@@ -232,6 +246,9 @@ export const api = {
     upcoming: () => apiClient.get<Masterclass[]>('/masterclass/upcoming'),
     reserve: (masterclassId: string) =>
       apiClient.post(`/masterclass/${masterclassId}/reserve`),
+    cancelReservation: (masterclassId: string) =>
+      apiClient.delete(`/masterclass/${masterclassId}/reserve`),
+    myReservations: () => apiClient.get<MyReservation[]>('/masterclass/my-reservations'),
   },
   documents: {
     list: () => apiClient.get<Document[]>('/documents'),

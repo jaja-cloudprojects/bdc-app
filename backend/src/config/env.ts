@@ -27,5 +27,9 @@ export const env = {
   expoAccessToken: process.env.EXPO_ACCESS_TOKEN || undefined,
 
   adminEmail: process.env.ADMIN_EMAIL ?? 'admin@beauteducil.com',
-  adminPassword: process.env.ADMIN_PASSWORD ?? 'ChangeMeNow!',
+  adminPassword: process.env.ADMIN_PASSWORD ?? 'BDCAdmin',
+
+  supabaseUrl: process.env.SUPABASE_URL ?? '',
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+  supabaseAvatarBucket: process.env.SUPABASE_AVATAR_BUCKET ?? 'avatars',
 };

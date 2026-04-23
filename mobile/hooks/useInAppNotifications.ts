@@ -5,7 +5,7 @@ import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LAST_SEEN_KEY = 'bdc_last_inapp_notif';
-const POLL_INTERVAL_MS = 30_000;
+const POLL_INTERVAL_MS = 2_000;
 
 export interface InAppNotifPayload {
   title: string;

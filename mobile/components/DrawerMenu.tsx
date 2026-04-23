@@ -7,7 +7,7 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -37,6 +37,7 @@ interface Props {
 
 export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }: Props) {
   const { width } = useResponsive();
+  const insets = useSafeAreaInsets();
   const drawerWidth = Math.min(width * 0.82, 360);
 
   const translateX = useSharedValue(-drawerWidth);
@@ -45,16 +46,16 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
   useEffect(() => {
     if (visible) {
       translateX.value = withTiming(0, {
-        duration: 280,
-        easing: Easing.out(Easing.cubic),
+        duration: 320,
+        easing: Easing.bezier(0.25, 0.46, 0.45, 0.94), // iOS ease-out
       });
-      overlayOpacity.value = withTiming(1, { duration: 280 });
+      overlayOpacity.value = withTiming(1, { duration: 320 });
     } else {
       translateX.value = withTiming(-drawerWidth, {
-        duration: 220,
-        easing: Easing.in(Easing.cubic),
+        duration: 240,
+        easing: Easing.bezier(0.55, 0, 1, 0.45), // iOS ease-in
       });
-      overlayOpacity.value = withTiming(0, { duration: 220 });
+      overlayOpacity.value = withTiming(0, { duration: 240 });
     }
   }, [visible, drawerWidth, translateX, overlayOpacity]);
 
@@ -85,7 +86,10 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
       </Animated.View>
 
       <Animated.View style={[styles.drawer, { width: drawerWidth }, drawerStyle]}>
-        <SafeAreaView edges={['top', 'bottom']} style={styles.drawerInner}>
+        <View style={[
+          styles.drawerInner,
+          { paddingTop: insets.top + Spacing.xl, paddingBottom: insets.bottom + Spacing.lg },
+        ]}>
           <Pressable onPress={onLogoPress} style={styles.logoWrap}>
             <Logo size="md" />
           </Pressable>
@@ -117,7 +121,7 @@ export function DrawerMenu({ visible, onClose, items, bottomItem, onLogoPress }:
               <Text style={styles.bottomItemText}>{bottomItem.label}</Text>
             </Pressable>
           )}
-        </SafeAreaView>
+        </View>
       </Animated.View>
     </Modal>
   );
@@ -154,11 +158,9 @@ const styles = StyleSheet.create({
   drawerInner: {
     flex: 1,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
   },
   logoWrap: {
     alignItems: 'flex-start',
-    paddingVertical: Spacing.base,
     marginBottom: Spacing.xl,
   },
   itemsList: {

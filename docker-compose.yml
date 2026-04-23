@@ -34,6 +34,9 @@ services:
       NODE_ENV: production
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@beauteducil.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-ChangeMeNow!}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_AVATAR_BUCKET: ${SUPABASE_AVATAR_BUCKET:-avatars}
     ports:
       - "4000:4000"
     volumes:
