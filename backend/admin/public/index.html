@@ -874,12 +874,17 @@
 
       <!-- DASHBOARD -->
       <div id="tab-dashboard" class="section active">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-value" id="s-users">—</div></div>
-          <div class="stat-card"><div class="stat-label">Produits</div><div class="stat-value" id="s-products">—</div></div>
-          <div class="stat-card"><div class="stat-label">Masterclass à venir</div><div class="stat-value" id="s-mc">—</div></div>
-          <div class="stat-card"><div class="stat-label">Réservations</div><div class="stat-value" id="s-res">—</div></div>
-          <div class="stat-card"><div class="stat-label">Appareils push</div><div class="stat-value" id="s-push">—</div></div>
+        <div id="dash-greeting" style="margin-bottom:22px"></div>
+        <div id="dash-stats" class="stats-grid" style="margin-bottom:22px"></div>
+        <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px">
+          <div class="card">
+            <div class="card-title">Prochaines masterclasses</div>
+            <div id="dash-mc-content"><div class="empty" style="padding:24px 0">Chargement…</div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Aperçu global</div>
+            <div id="dash-overview-content"></div>
+          </div>
         </div>
       </div>
 
@@ -1541,16 +1546,126 @@ function showSplash() {
   }, 2000);
 }
 
-/* ── STATS ─────────────────────────────────────────── */
+/* ── DASHBOARD ─────────────────────────────────────── */
 async function loadStats() {
   try {
-    const s = await req('/admin/stats');
-    document.getElementById('s-users').textContent    = s.users;
-    document.getElementById('s-products').textContent = s.products;
-    document.getElementById('s-mc').textContent       = s.upcomingMasterclass;
-    document.getElementById('s-res').textContent      = s.reservations;
-    document.getElementById('s-push').textContent     = s.pushTokens;
+    const [stats, masterclasses] = await Promise.all([
+      req('/admin/stats').catch(() => null),
+      req('/admin/masterclass').catch(() => []),
+    ]);
+    renderDashboard(stats, masterclasses);
   } catch { /* ignore */ }
+}
+
+const _STAT_DEFS = [
+  { id: 's-users',    label: 'Utilisateurs',         color: '#E8586E', bg: 'rgba(232,88,110,.1)',
+    icon: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>` },
+  { id: 's-products', label: 'Produits',              color: '#3B82F6', bg: 'rgba(59,130,246,.1)',
+    icon: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>` },
+  { id: 's-mc',       label: 'Masterclass à venir',   color: '#8B5CF6', bg: 'rgba(139,92,246,.1)',
+    icon: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>` },
+  { id: 's-res',      label: 'Réservations',          color: '#10B981', bg: 'rgba(16,185,129,.1)',
+    icon: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>` },
+  { id: 's-push',     label: 'Appareils push',        color: '#F59E0B', bg: 'rgba(245,158,11,.1)',
+    icon: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>` },
+];
+
+function renderDashboard(stats, masterclasses) {
+  // ── Greeting ──
+  const greetingEl = document.getElementById('dash-greeting');
+  if (greetingEl) {
+    const u = _adminUser;
+    const roleLabels = { STUDENT: 'Élève', FORMATRICE: 'Formatrice', ADMIN: 'Administrateur', SUPER_ADMIN: 'SuperAdmin' };
+    const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const avatarInner = u?.avatarUrl
+      ? `<img src="${escHtml(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      : `<span style="font-size:22px;font-weight:700;color:#fff">${u ? u.firstName.charAt(0).toUpperCase() : '?'}</span>`;
+    greetingEl.innerHTML = `
+      <div style="background:linear-gradient(135deg,#E8586E 0%,#c03050 100%);border-radius:18px;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;color:#fff;box-shadow:0 6px 28px rgba(232,88,110,.28)">
+        <div>
+          <div style="font-size:12px;opacity:.75;margin-bottom:6px;text-transform:capitalize;letter-spacing:.2px">${dateStr}</div>
+          <div style="font-size:26px;font-weight:800;margin-bottom:8px">Bonjour, ${u ? escHtml(u.firstName) : ''} !</div>
+          <span style="display:inline-flex;align-items:center;background:rgba(255,255,255,.2);padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.3px">${roleLabels[u?.role] || (u?.role ?? '')}</span>
+        </div>
+        <div style="width:62px;height:62px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          ${avatarInner}
+        </div>
+      </div>`;
+  }
+
+  // ── Stat cards ──
+  const statsEl = document.getElementById('dash-stats');
+  if (statsEl) {
+    statsEl.innerHTML = _STAT_DEFS.map(d => {
+      const val = stats
+        ? (d.id === 's-users' ? stats.users : d.id === 's-products' ? stats.products : d.id === 's-mc' ? stats.upcomingMasterclass : d.id === 's-res' ? stats.reservations : stats.pushTokens)
+        : '—';
+      return `<div class="stat-card" style="border-top:3px solid ${d.color}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="stat-label">${d.label}</div>
+            <div class="stat-value" id="${d.id}" style="color:${d.color}">${val ?? '—'}</div>
+          </div>
+          <div style="width:36px;height:36px;border-radius:10px;background:${d.bg};display:flex;align-items:center;justify-content:center;color:${d.color};flex-shrink:0;margin-top:2px">
+            ${d.icon}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Masterclass chart ──
+  const mcEl = document.getElementById('dash-mc-content');
+  if (mcEl) {
+    if (!masterclasses?.length) {
+      mcEl.innerHTML = '<div class="empty" style="padding:24px 0">Aucune masterclass à venir.</div>';
+    } else {
+      mcEl.innerHTML = masterclasses.slice(0, 6).map(m => {
+        const reserved = m._count?.reservations ?? 0;
+        const total    = m.capacity ?? 0;
+        const pct      = total > 0 ? Math.round((reserved / total) * 100) : 0;
+        const barColor = pct >= 90 ? '#ef4444' : pct >= 60 ? '#E8586E' : '#3B82F6';
+        return `<div style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%">${escHtml(m.title)}</div>
+            <div style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${reserved} / ${total} &nbsp;·&nbsp; ${fmt(m.date)}</div>
+          </div>
+          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .9s cubic-bezier(.4,0,.2,1)"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── Overview donuts ──
+  const ovEl = document.getElementById('dash-overview-content');
+  if (ovEl && stats) {
+    const totalSlots = masterclasses?.reduce((a, m) => a + (m.capacity ?? 0), 0) ?? 0;
+    const usedSlots  = masterclasses?.reduce((a, m) => a + (m._count?.reservations ?? 0), 0) ?? 0;
+    const fillPct    = totalSlots > 0 ? Math.min(100, Math.round((usedSlots / totalSlots) * 100)) : 0;
+    const pushPct    = stats.users > 0 ? Math.min(100, Math.round((stats.pushTokens / stats.users) * 100)) : 0;
+
+    const donut = (pct, color, label, sub) => `
+      <div style="display:flex;align-items:center;gap:18px;padding:16px 0;border-bottom:1px solid var(--border)">
+        <svg width="56" height="56" viewBox="0 0 36 36" style="flex-shrink:0;transform:rotate(-90deg)">
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3.5"/>
+          <circle cx="18" cy="18" r="15.9" fill="none" stroke="${color}" stroke-width="3.5"
+            stroke-dasharray="${pct} 100" stroke-linecap="round"
+            style="transition:stroke-dasharray .9s cubic-bezier(.4,0,.2,1)"/>
+        </svg>
+        <div style="min-width:0">
+          <div style="font-size:22px;font-weight:800;color:var(--text);line-height:1">${pct}%</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-top:3px">${label}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:1px">${sub}</div>
+        </div>
+      </div>`;
+
+    ovEl.innerHTML =
+      donut(fillPct, '#E8586E', 'Places réservées',    `${usedSlots} / ${totalSlots} au total`) +
+      donut(pushPct, '#3B82F6', 'Adoption push',        `${stats.pushTokens} appareils enregistrés`) +
+      `<div style="padding:14px 0 2px;font-size:12px;color:var(--muted)">${stats.users} utilisateur${stats.users > 1 ? 's' : ''} · ${stats.products} produit${stats.products > 1 ? 's' : ''}</div>`;
+  }
 }
 
 /* ── USERS ─────────────────────────────────────────── */
