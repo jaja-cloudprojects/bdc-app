@@ -1443,7 +1443,9 @@ function sortAndRenderNotifs() {
 
 function _isDebugUser(u) {
   const hay = (u.email + ' ' + u.firstName + ' ' + u.lastName).toLowerCase();
-  return /\b(test|debug|demo)\b/.test(hay);
+  if (/\b(test|debug|demo)\b/.test(hay)) return true;
+  if (hay.includes('ne pas toucher')) return true;
+  return false;
 }
 
 function _renderUserRow(u) {
