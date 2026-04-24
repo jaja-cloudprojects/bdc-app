@@ -24,10 +24,21 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
   }
 }
 
+const DASHBOARD_ROLES = new Set(['ADMIN', 'FORMATRICE', 'SUPER_ADMIN']);
+
 export function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
   requireAuth(req, res, () => {
-    if (req.user?.role !== 'ADMIN') {
-      return res.status(403).json({ message: 'Admin access required' });
+    if (!DASHBOARD_ROLES.has(req.user?.role ?? '')) {
+      return res.status(403).json({ message: 'Accès refusé' });
+    }
+    next();
+  });
+}
+
+export function requireSuperAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
+  requireAuth(req, res, () => {
+    if (req.user?.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Accès SuperAdmin requis' });
     }
     next();
   });

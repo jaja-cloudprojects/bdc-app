@@ -5,7 +5,7 @@ import { env } from '../config/env';
 export interface TokenPayload {
   sub: string;
   email: string;
-  role: 'STUDENT' | 'FORMATRICE' | 'ADMIN';
+  role: 'STUDENT' | 'FORMATRICE' | 'ADMIN' | 'SUPER_ADMIN';
   jti?: string;
 }
 

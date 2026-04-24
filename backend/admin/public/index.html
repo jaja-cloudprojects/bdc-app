@@ -309,6 +309,7 @@
     .badge-student    { background: var(--blue-lt); color: var(--blue); }
     .badge-formatrice { background: #f0fdf4; color: #16a34a; }
     .badge-admin      { background: var(--pink-lt); color: var(--pink); }
+    .badge-superadmin { background: #1e1b4b; color: #a5b4fc; }
 
     /* ── BUTTONS ────────────────────────────────────────── */
     .btn {
@@ -670,7 +671,7 @@
       <button class="nav-item active" data-tab="dashboard">
         <span class="nav-icon">▦</span> Dashboard
       </button>
-      <button class="nav-item" data-tab="users">
+      <button class="nav-item" data-tab="users" data-role-required="superadmin">
         <span class="nav-icon">◎</span> Utilisateurs
       </button>
       <button class="nav-item" data-tab="products">
@@ -685,14 +686,20 @@
       <button class="nav-item" data-tab="masterclass">
         <span class="nav-icon">◬</span> Masterclass
       </button>
-      <button class="nav-item" data-tab="push">
+      <button class="nav-item" data-tab="push" data-role-required="superadmin">
         <span class="nav-icon">◎</span> Notifications
       </button>
-      <button class="nav-item" data-tab="documents">
+      <button class="nav-item" data-tab="documents" data-role-required="superadmin">
         <span class="nav-icon">◧</span> Documents
       </button>
       <button class="nav-item" data-tab="messages">
         <span class="nav-icon">✉</span> Messages
+      </button>
+      <button class="nav-item" data-tab="dbexplorer" data-role-required="superadmin" style="border-top:1px solid var(--border);margin-top:6px;padding-top:12px">
+        <span class="nav-icon">⊞</span> DB Explorer
+      </button>
+      <button class="nav-item" data-tab="health" data-role-required="superadmin">
+        <span class="nav-icon">♥</span> Health Check
       </button>
     </nav>
 
@@ -1029,6 +1036,45 @@
         </div>
       </div>
 
+      <!-- DB EXPLORER -->
+      <div id="tab-dbexplorer" class="section">
+        <div style="display:flex;gap:20px;align-items:flex-start">
+          <div class="card" style="width:200px;flex-shrink:0;padding:16px">
+            <div class="card-title" style="margin-bottom:12px">Tables</div>
+            <div id="dbTablesList" style="font-size:13px;color:var(--muted)">Chargement…</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="card">
+              <div class="card-title">Requête SQL</div>
+              <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Seules les requêtes <code style="background:var(--border);padding:1px 6px;border-radius:4px">SELECT</code> sont autorisées. <kbd style="background:var(--border);padding:1px 6px;border-radius:4px;font-size:11px">Ctrl+Entrée</kbd> pour exécuter.</div>
+              <textarea id="dbQueryInput" placeholder='SELECT * FROM "User" LIMIT 20;'
+                style="font-family:monospace;font-size:13px;width:100%;min-height:130px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);resize:vertical;outline:none;transition:border-color .15s"
+                onfocus="this.style.borderColor='var(--pink)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+                <button id="runQueryBtn" class="btn btn-primary">▶ Exécuter</button>
+                <span id="dbQueryStatus" style="font-size:12.5px;color:var(--muted)"></span>
+              </div>
+            </div>
+            <div id="dbResultsCard" class="card" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div class="card-title" style="margin-bottom:0" id="dbResultsTitle">Résultats</div>
+              </div>
+              <div class="table-wrap" id="dbResults"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEALTH CHECK -->
+      <div id="tab-health" class="section">
+        <div class="card" style="max-width:600px">
+          <div class="card-title">Health Check</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:18px">Vérifiez l'état du serveur, de la base de données et de l'environnement.</p>
+          <button id="runHealthBtn" class="btn btn-primary">Vérifier l'état du système</button>
+          <div id="healthResults" style="margin-top:20px"></div>
+        </div>
+      </div>
+
     </div><!-- /page-body -->
   </div><!-- /main -->
 
@@ -1061,7 +1107,14 @@
     <div class="form-group"><label class="form-label">Email</label><input id="eu_email" type="email" /></div>
     <div class="form-group">
       <label class="form-label">Nouveau mot de passe <span style="color:var(--muted);font-weight:400">(laisser vide pour ne pas changer)</span></label>
-      <input id="eu_pw" type="password" placeholder="••••••••" autocomplete="new-password" />
+      <div style="position:relative;display:flex;align-items:center">
+        <input id="eu_pw" type="password" placeholder="••••••••" autocomplete="new-password" style="padding-right:40px;width:100%" />
+        <button type="button" id="eu_pw_toggle" onclick="(function(){var i=document.getElementById('eu_pw'),b=document.getElementById('eu_pw_toggle');var show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?'<svg width=16 height=16 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94\'/><path d=\'M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19\'/><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'/></svg>':'<svg width=16 height=16 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'/><circle cx=\'12\' cy=\'12\' r=\'3\'/></svg>';})()"
+          style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;padding:4px;border-radius:4px;line-height:0"
+          title="Afficher / masquer le mot de passe">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Rôle</label>
@@ -1069,6 +1122,7 @@
         <option value="STUDENT">Élève</option>
         <option value="FORMATRICE">Formatrice</option>
         <option value="ADMIN">Administrateur</option>
+        <option value="SUPER_ADMIN">SuperAdmin</option>
       </select>
     </div>
     <div id="editUserModalErr" class="field-error hidden"></div>
@@ -1091,13 +1145,24 @@
       <div class="form-group"><label class="form-label">Nom</label><input id="u_last" type="text" autocomplete="off" /></div>
     </div>
     <div class="form-group"><label class="form-label">Email</label><input id="u_email" type="email" autocomplete="off" /></div>
-    <div class="form-group"><label class="form-label">Mot de passe <span style="color:var(--muted);font-weight:400">(min. 8 caractères)</span></label><input id="u_pw" type="password" /></div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe <span style="color:var(--muted);font-weight:400">(min. 8 caractères)</span></label>
+      <div style="position:relative;display:flex;align-items:center">
+        <input id="u_pw" type="password" style="padding-right:40px;width:100%" />
+        <button type="button" id="u_pw_toggle" onclick="(function(){var i=document.getElementById('u_pw'),b=document.getElementById('u_pw_toggle');var show=i.type==='password';i.type=show?'text':'password';b.innerHTML=show?'<svg width=16 height=16 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94\'/><path d=\'M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19\'/><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'/></svg>':'<svg width=16 height=16 viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'/><circle cx=\'12\' cy=\'12\' r=\'3\'/></svg>';})()"
+          style="position:absolute;right:8px;background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;padding:4px;border-radius:4px;line-height:0"
+          title="Afficher / masquer le mot de passe">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Rôle</label>
       <select id="u_role">
         <option value="STUDENT">Élève</option>
         <option value="FORMATRICE">Formatrice</option>
         <option value="ADMIN">Administrateur</option>
+        <option value="SUPER_ADMIN">SuperAdmin</option>
       </select>
     </div>
     <div id="userModalErr" class="field-error hidden"></div>
@@ -1178,9 +1243,37 @@ async function req(path, opts = {}) {
 
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}));
+    if (payload.issues?.length) throw new Error(formatValidationIssues(payload.issues));
     throw new Error(payload.message || `Erreur ${res.status}`);
   }
   return res.status === 204 ? null : res.json();
+}
+
+function formatValidationIssues(issues) {
+  const labels = {
+    email: 'Email', password: 'Mot de passe', firstName: 'Prénom',
+    lastName: 'Nom', role: 'Rôle', title: 'Titre', name: 'Nom',
+    slug: 'Identifiant URL', content: 'Message', body: 'Corps',
+    category: 'Catégorie', price: 'Prix', cronExpr: 'Expression cron',
+  };
+  return issues.map(issue => {
+    const field = labels[issue.path?.[0]] || issue.path?.[0] || 'Champ';
+    if (issue.code === 'too_small') {
+      return issue.minimum === 1
+        ? `${field} requis.`
+        : `${field} : minimum ${issue.minimum} caractères.`;
+    }
+    if (issue.code === 'invalid_string' && issue.validation === 'email') {
+      return 'Adresse email invalide.';
+    }
+    if (issue.code === 'invalid_enum_value') {
+      return `${field} : valeur non autorisée.`;
+    }
+    if (issue.code === 'too_big') {
+      return `${field} : maximum ${issue.maximum} caractères.`;
+    }
+    return `${field} invalide.`;
+  }).join(' ');
 }
 
 /* ── Toast ─────────────────────────────────────────── */
@@ -1208,6 +1301,7 @@ const TITLES = {
   dashboard: 'Dashboard', users: 'Utilisateurs', products: 'Produits',
   categories: 'Catégories', news: 'Actualités', masterclass: 'Masterclass',
   push: 'Notifications', documents: 'Documents', messages: 'Messages',
+  dbexplorer: 'DB Explorer', health: 'Health Check',
 };
 
 const LOADERS = {
@@ -1220,6 +1314,8 @@ const LOADERS = {
   push: () => { loadNotifHistory(); loadCampaigns(); },
   documents: loadDocuments,
   messages: loadConversations,
+  dbexplorer: loadDbTables,
+  health: () => {},
 };
 
 function showTab(tab) {
@@ -1383,8 +1479,8 @@ function sortAndRender() {
       </td>
       <td style="color:var(--muted)">${u.email}</td>
       <td>
-        <span class="badge badge-${u.role === 'ADMIN' ? 'admin' : u.role === 'FORMATRICE' ? 'formatrice' : 'student'}">
-          ${u.role === 'ADMIN' ? 'Admin' : u.role === 'FORMATRICE' ? 'Formatrice' : 'Élève'}
+        <span class="badge badge-${u.role === 'SUPER_ADMIN' ? 'superadmin' : u.role === 'ADMIN' ? 'admin' : u.role === 'FORMATRICE' ? 'formatrice' : 'student'}">
+          ${u.role === 'SUPER_ADMIN' ? 'SuperAdmin' : u.role === 'ADMIN' ? 'Admin' : u.role === 'FORMATRICE' ? 'Formatrice' : 'Élève'}
         </span>
       </td>
       <td style="color:var(--muted);font-size:12.5px">${fmt(u.createdAt)}</td>
@@ -1816,6 +1912,14 @@ function showLogin() {
   clearInterval(_convPollTimer);
 }
 
+/* ── ROLE UI ───────────────────────────────────────── */
+function applyRoleUI() {
+  const isSuperAdmin = _adminUser?.role === 'SUPER_ADMIN';
+  document.querySelectorAll('[data-role-required="superadmin"]').forEach(el => {
+    el.classList.toggle('hidden', !isSuperAdmin);
+  });
+}
+
 /* ── BOOT ──────────────────────────────────────────── */
 async function boot() {
   document.getElementById('login-page').classList.add('hidden');
@@ -1823,11 +1927,127 @@ async function boot() {
   if (!_adminUser) {
     try { _adminUser = await req('/auth/me'); } catch { /* ignore */ }
   }
+  applyRoleUI();
   // Poll conversations en permanence pour maintenir le badge à jour
   clearInterval(_globalPollTimer);
   loadConversations();
   _globalPollTimer = setInterval(loadConversations, 3_000);
   showTab('dashboard');
+}
+
+/* ── DB EXPLORER ───────────────────────────────────── */
+async function loadDbTables() {
+  const list = document.getElementById('dbTablesList');
+  if (!list) return;
+  try {
+    const tables = await req('/admin/db-tables');
+    if (!tables.length) {
+      list.innerHTML = '<div style="color:var(--muted)">Aucune table.</div>';
+      return;
+    }
+    list.innerHTML = tables.map(t =>
+      `<div class="db-table-item" data-table="${escHtml(t)}"
+        style="padding:5px 8px;border-radius:6px;cursor:pointer;margin-bottom:2px;font-family:monospace;font-size:12px;color:var(--text)"
+        >${escHtml(t)}</div>`
+    ).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:var(--red);font-size:12.5px">${e.message}</div>`;
+  }
+}
+
+async function runDbQuery() {
+  const input     = document.getElementById('dbQueryInput');
+  const statusEl  = document.getElementById('dbQueryStatus');
+  const resultsCard = document.getElementById('dbResultsCard');
+  const resultsEl = document.getElementById('dbResults');
+  const titleEl   = document.getElementById('dbResultsTitle');
+  const btn       = document.getElementById('runQueryBtn');
+  const sql = input.value.trim();
+  if (!sql) return;
+  btn.disabled = true;
+  statusEl.textContent = 'Exécution…';
+  statusEl.style.color = 'var(--muted)';
+  const t0 = performance.now();
+  try {
+    const { rows } = await req('/admin/db-query', { method: 'POST', body: JSON.stringify({ sql }) });
+    const elapsed = Math.round(performance.now() - t0);
+    if (!rows || !rows.length) {
+      titleEl.textContent = 'Résultats';
+      resultsEl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px">0 ligne retournée.</div>';
+      statusEl.textContent = `0 ligne — ${elapsed}ms`;
+      statusEl.style.color = 'var(--muted)';
+      resultsCard.style.display = '';
+      return;
+    }
+    const cols = Object.keys(rows[0]);
+    titleEl.textContent = `Résultats (${rows.length} ligne${rows.length > 1 ? 's' : ''})`;
+    statusEl.textContent = `${rows.length} ligne${rows.length > 1 ? 's' : ''} — ${elapsed}ms`;
+    statusEl.style.color = 'var(--green)';
+    resultsEl.innerHTML = `<table>
+      <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(row =>
+        `<tr>${cols.map(c => {
+          const v = row[c];
+          const display = v === null
+            ? '<span style="color:var(--muted);font-style:italic">NULL</span>'
+            : escHtml(String(v));
+          return `<td style="font-family:monospace;font-size:12.5px;white-space:pre">${display}</td>`;
+        }).join('')}</tr>`
+      ).join('')}</tbody>
+    </table>`;
+    resultsCard.style.display = '';
+  } catch(e) {
+    statusEl.textContent = e.message;
+    statusEl.style.color = 'var(--red)';
+    resultsCard.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── HEALTH CHECK ──────────────────────────────────── */
+async function runHealthCheck() {
+  const btn     = document.getElementById('runHealthBtn');
+  const results = document.getElementById('healthResults');
+  btn.disabled = true;
+  btn.textContent = 'Vérification…';
+  results.innerHTML = '';
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/health');
+    const data = await r.json();
+    const elapsed = Math.round(performance.now() - t0);
+    const ok   = data.status === 'ok';
+    const dbOk = data.db === 'connected';
+    results.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:${ok?'#f0fdf4':'#fef2f2'};border-radius:10px;border:1px solid ${ok?'#bbf7d0':'#fecaca'}">
+          <span style="font-size:22px">${ok?'✅':'❌'}</span>
+          <div>
+            <div style="font-weight:700;color:${ok?'#16a34a':'#dc2626'}">${ok?'Serveur opérationnel':'Serveur dégradé'}</div>
+            <div style="font-size:12.5px;color:var(--muted)">Latence : ${elapsed}ms</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:${dbOk?'#f0fdf4':'#fef2f2'};border-radius:10px;border:1px solid ${dbOk?'#bbf7d0':'#fecaca'}">
+          <span style="font-size:22px">${dbOk?'🗄️':'❌'}</span>
+          <div>
+            <div style="font-weight:700;color:${dbOk?'#16a34a':'#dc2626'}">Base de données : ${dbOk?'Connectée':'Déconnectée'}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+          <span style="font-size:22px">⚙️</span>
+          <div>
+            <div style="font-weight:600">Environnement : <code style="background:var(--border);padding:2px 8px;border-radius:4px;font-size:12.5px">${escHtml(data.env||'unknown')}</code></div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Vérifié le : ${new Date(data.ts).toLocaleString('fr-FR')}</div>
+          </div>
+        </div>
+      </div>`;
+  } catch(e) {
+    results.innerHTML = `<div style="color:var(--red);padding:12px;background:var(--red-lt);border-radius:8px">Erreur : ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Vérifier l'état du système";
+  }
 }
 
 /* ── EVENTS ────────────────────────────────────────── */
@@ -2200,6 +2420,21 @@ document.addEventListener('click', async e => {
     return;
   }
 
+  // DB Explorer — run query
+  if (e.target.id === 'runQueryBtn') { runDbQuery(); return; }
+
+  // DB Explorer — click table name → prefill query
+  const dbTableItem = e.target.closest('.db-table-item');
+  if (dbTableItem) {
+    const t = dbTableItem.dataset.table;
+    document.getElementById('dbQueryInput').value = `SELECT * FROM "${t}" LIMIT 50;`;
+    document.getElementById('dbQueryInput').focus();
+    return;
+  }
+
+  // Health Check — run
+  if (e.target.id === 'runHealthBtn') { runHealthCheck(); return; }
+
   // Open conversation
   const convItem = e.target.closest('.conv-item[data-conv-id]');
   if (convItem) { openConversation(convItem.dataset.convId); return; }
@@ -2357,6 +2592,10 @@ document.addEventListener('keydown', e => {
     if (t === 'chatInput' && !e.shiftKey) {
       e.preventDefault();
       sendAdminMessage();
+    }
+    if (t === 'dbQueryInput' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      runDbQuery();
     }
   }
   if (e.key === 'Escape') {
