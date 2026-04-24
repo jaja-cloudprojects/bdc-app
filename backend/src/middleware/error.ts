@@ -23,7 +23,8 @@ export function errorHandler(
 
   const status = err.status || err.statusCode || 500;
   res.status(status).json({
-    message: err.message || 'Internal server error',
-    ...(env.isDev && err.stack ? { stack: err.stack } : {}),
+    message: status < 500
+      ? (err.message || 'Request error')
+      : (env.isDev ? err.message : 'Internal server error'),
   });
 }

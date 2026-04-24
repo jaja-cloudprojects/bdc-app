@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, TokenPayload } from '../utils/jwt';
+import { isRevoked } from '../utils/tokenBlacklist';
 
 export interface AuthedRequest extends Request {
   user?: TokenPayload;
@@ -12,7 +13,11 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
   }
   try {
     const token = header.substring(7);
-    req.user = verifyAccessToken(token);
+    const payload = verifyAccessToken(token);
+    if (payload.jti && isRevoked(payload.jti)) {
+      return res.status(401).json({ message: 'Token revoked' });
+    }
+    req.user = payload;
     next();
   } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });

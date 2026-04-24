@@ -1,18 +1,22 @@
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { env } from '../config/env';
 
 export interface TokenPayload {
-  sub: string;       // user id
+  sub: string;
   email: string;
-  role: 'STUDENT' | 'ADMIN';
+  role: 'STUDENT' | 'FORMATRICE' | 'ADMIN';
+  jti?: string;
 }
 
 export function signAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn } as jwt.SignOptions);
+  return jwt.sign({ ...payload, jti: randomUUID() }, env.jwtSecret, {
+    expiresIn: env.jwtExpiresIn,
+  } as jwt.SignOptions);
 }
 
 export function signRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.jwtRefreshSecret, {
+  return jwt.sign({ ...payload, jti: randomUUID() }, env.jwtRefreshSecret, {
     expiresIn: env.jwtRefreshExpiresIn,
   } as jwt.SignOptions);
 }

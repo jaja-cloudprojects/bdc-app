@@ -312,11 +312,22 @@ router.get('/documents', async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
+const documentBodySchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  category: z.string().min(1).max(100).optional(),
+});
+
 router.post('/documents', pdfUpload.single('file'), async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'Fichier PDF requis.' });
-    const { title, category } = req.body as Record<string, string>;
+
+    // Verify PDF magic bytes to block disguised file uploads
+    if (file.buffer.slice(0, 4).toString('ascii') !== '%PDF') {
+      return res.status(400).json({ message: 'Le fichier n\'est pas un PDF valide.' });
+    }
+
+    const { title, category } = documentBodySchema.parse(req.body);
 
     const fileUrl = await uploadDocument(file.buffer, file.originalname, file.mimetype);
 

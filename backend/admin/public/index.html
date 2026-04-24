@@ -782,7 +782,7 @@
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Nom</th><th>Identifiant URL</th><th></th></tr></thead>
+              <thead><tr><th>Image</th><th>Nom</th><th>Identifiant URL</th><th></th></tr></thead>
               <tbody id="catsTbody"></tbody>
             </table>
           </div>
@@ -1518,14 +1518,35 @@ async function loadCategories() {
   try {
     const list = await req('/categories');
     tbody.innerHTML = list.length
-      ? list.map(c => `<tr>
-          <td>${c.name}</td>
-          <td><code style="font-size:12px;color:var(--muted)">${c.slug}</code></td>
-          <td><button class="btn btn-danger btn-sm del-cat" data-id="${c.id}">Supprimer</button></td>
-        </tr>`).join('')
-      : '<tr><td colspan="3"><div class="empty">Aucune catégorie.</div></td></tr>';
+      ? list.map(c => {
+          const thumb = c.imageUrl
+            ? `<img src="${escHtml(c.imageUrl)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" />`
+            : `<div style="width:44px;height:44px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px">📷</div>`;
+          return `<tr data-cat-id="${c.id}">
+            <td>${thumb}</td>
+            <td style="font-weight:500">${escHtml(c.name)}</td>
+            <td><code style="font-size:12px;color:var(--muted)">${escHtml(c.slug)}</code></td>
+            <td>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm edit-cat-img" data-id="${c.id}" data-current="${escHtml(c.imageUrl||'')}">Modifier l'image</button>
+                <button class="btn btn-danger btn-sm del-cat" data-id="${c.id}">Supprimer</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="cat-img-edit-row" id="cat-img-row-${c.id}" style="display:none">
+            <td colspan="4" style="padding:8px 12px;background:var(--bg)">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input type="text" class="cat-img-input" data-id="${c.id}" value="${escHtml(c.imageUrl||'')}"
+                  placeholder="https://…" style="flex:1;min-width:240px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)" />
+                <button class="btn btn-primary btn-sm save-cat-img" data-id="${c.id}">Enregistrer</button>
+                <button class="btn btn-secondary btn-sm cancel-cat-img" data-id="${c.id}">Annuler</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4"><div class="empty">Aucune catégorie.</div></td></tr>';
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="3"><div class="empty">${e.message}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">${e.message}</div></td></tr>`;
   }
 }
 
@@ -1974,6 +1995,32 @@ document.addEventListener('click', async e => {
     try {
       await req('/admin/categories/' + delCat.dataset.id, { method: 'DELETE' });
       toast('Catégorie supprimée.');
+      loadCategories();
+    } catch(e) { toast(e.message, 'err'); }
+    return;
+  }
+
+  // Toggle image edit row
+  const editCatImg = e.target.closest('.edit-cat-img');
+  if (editCatImg) {
+    const row = document.getElementById('cat-img-row-' + editCatImg.dataset.id);
+    row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    return;
+  }
+
+  const cancelCatImg = e.target.closest('.cancel-cat-img');
+  if (cancelCatImg) {
+    document.getElementById('cat-img-row-' + cancelCatImg.dataset.id).style.display = 'none';
+    return;
+  }
+
+  const saveCatImg = e.target.closest('.save-cat-img');
+  if (saveCatImg) {
+    const id = saveCatImg.dataset.id;
+    const imageUrl = document.querySelector(`.cat-img-input[data-id="${id}"]`).value.trim();
+    try {
+      await req('/admin/categories/' + id, { method: 'PUT', body: JSON.stringify({ imageUrl: imageUrl || undefined }) });
+      toast('Image mise à jour.');
       loadCategories();
     } catch(e) { toast(e.message, 'err'); }
     return;

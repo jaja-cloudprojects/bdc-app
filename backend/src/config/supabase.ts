@@ -20,6 +20,9 @@ function getClient(): SupabaseClient {
   return _supabase;
 }
 
+// Signed URL TTL for document access: 1 hour
+const SIGNED_URL_TTL = 3600;
+
 export async function uploadDocument(
   fileBuffer: Buffer,
   originalName: string,
@@ -28,10 +31,10 @@ export async function uploadDocument(
   const supabase = getClient();
   const bucket = env.supabaseDocumentsBucket;
 
-  // Ensure the bucket exists (creates it as public if missing)
+  // Ensure the bucket exists as PRIVATE (access via signed URLs only)
   const { data: buckets } = await supabase.storage.listBuckets();
   if (!buckets?.find((b) => b.name === bucket)) {
-    await supabase.storage.createBucket(bucket, { public: true });
+    await supabase.storage.createBucket(bucket, { public: false });
   }
 
   const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -43,8 +46,19 @@ export async function uploadDocument(
 
   if (error) throw new Error(`Supabase document upload failed: ${error.message}`);
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
-  return data.publicUrl;
+  // Return the storage path so we can generate fresh signed URLs on demand
+  return storagePath;
+}
+
+export async function getDocumentSignedUrl(storagePath: string): Promise<string> {
+  const supabase = getClient();
+  const { data, error } = await supabase.storage
+    .from(env.supabaseDocumentsBucket)
+    .createSignedUrl(storagePath, SIGNED_URL_TTL);
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to generate signed URL: ${error?.message}`);
+  }
+  return data.signedUrl;
 }
 
 export async function deleteDocument(storagePath: string): Promise<void> {

@@ -27,17 +27,20 @@ const app = express();
 // -----------------------------------------------------------------------------
 app.set('trust proxy', 1);
 app.use(helmet({
-  crossOriginResourcePolicy: false, // allow /uploads from mobile app
-  hsts: false, // pas de HTTPS forcé — ce serveur tourne en HTTP
+  crossOriginResourcePolicy: false,
+  hsts: env.isDev ? false : { maxAge: 31536000, includeSubDomains: true, preload: true },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", ...(env.isDev ? ["'unsafe-inline'"] : [])],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
     },
   },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
   origin: env.corsOrigin.includes('*') ? true : env.corsOrigin,
@@ -47,20 +50,23 @@ app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 if (env.isDev) app.use(morgan('dev'));
 
-// Global rate limit (public endpoints)
+// Global rate limit (public read endpoints)
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  message: { message: 'Trop de requêtes, réessayez dans quelques minutes.' },
 });
 
-// Stricter limit for auth endpoints
-const authLimiter = rateLimit({
+
+// Limit for authenticated write-heavy endpoints (chat, documents)
+const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: 120,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  message: { message: 'Trop de requêtes, réessayez dans quelques minutes.' },
 });
 
 // -----------------------------------------------------------------------------
@@ -92,13 +98,13 @@ app.get('/health', async (_req, res) => {
 // -----------------------------------------------------------------------------
 const api = express.Router();
 
-api.use('/auth', authLimiter, authRoutes);
+api.use('/auth', publicLimiter, authRoutes);
 api.use('/products', publicLimiter, productsRoutes);
 api.use('/categories', publicLimiter, categoriesRoutes);
 api.use('/news', publicLimiter, newsRoutes);
 api.use('/masterclass', publicLimiter, masterclassRoutes);
-api.use('/chat', chatRoutes);
-api.use('/documents', documentsRoutes);
+api.use('/chat', apiLimiter, chatRoutes);
+api.use('/documents', apiLimiter, documentsRoutes);
 api.use('/notifications', publicLimiter, notificationsRoutes);
 api.use('/admin', adminRoutes);
 

@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
 import { Header } from '@/components/Header';
+import { useStudentMenu } from '@/contexts/StudentMenuContext';
 import { Colors } from '@/constants/Colors';
 import { FontFamily, FontSize } from '@/constants/Typography';
 import { Spacing, MaxContentWidth } from '@/constants/Layout';
@@ -17,13 +17,14 @@ interface Props {
  * Shared layout for sub-pages of the student area: Documents, Profile, Help, etc.
  */
 export function StudentPageScaffold({ title, subtitle, children }: Props) {
+  const { openMenu } = useStudentMenu();
   const { width, scale } = useResponsive();
   const contentWidth = Math.min(width, MaxContentWidth);
   const sidePadding = scale({ phoneSm: Spacing.base, phone: Spacing.lg, tablet: Spacing['2xl'] });
 
   return (
     <View style={styles.root}>
-      <Header onMenuPress={() => router.back()} />
+      <Header onMenuPress={openMenu} />
       <ScrollView
         contentContainerStyle={[
           styles.scroll,

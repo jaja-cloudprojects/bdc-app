@@ -6,6 +6,7 @@ import {
   Text,
   Pressable,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -40,7 +41,7 @@ const FALLBACK_PRODUCTS = [
 export default function HomeScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { width, scale, isTablet, isTabletLg } = useResponsive();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -171,6 +172,17 @@ export default function HomeScreen() {
           label: 'Espace élèves',
           onPress: () => router.push(isAuthenticated ? '/(student)/dashboard' : '/(auth)/login' as any),
         }}
+        logoutItem={isAuthenticated ? {
+          label: 'Se déconnecter',
+          onPress: () => Alert.alert(
+            'Déconnexion',
+            'Voulez-vous vraiment vous déconnecter ?',
+            [
+              { text: 'Annuler', style: 'cancel' },
+              { text: 'Se déconnecter', style: 'destructive', onPress: () => logout() },
+            ],
+          ),
+        } : undefined}
         onLogoPress={() => router.push('/')}
       />
     </View>

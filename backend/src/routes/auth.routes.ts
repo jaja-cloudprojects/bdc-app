@@ -8,6 +8,7 @@ import {
   verifyRefreshToken,
 } from '../utils/jwt';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
+import { revokeToken } from '../utils/tokenBlacklist';
 import { upload, avatarUpload } from '../middleware/upload';
 import { uploadAvatar } from '../config/supabase';
 
@@ -15,7 +16,7 @@ const router = Router();
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(1),
+  password: z.string().min(8).max(128),
 });
 
 router.post('/login', async (req, res, next) => {
@@ -83,8 +84,8 @@ router.get('/me', requireAuth, async (req: AuthedRequest, res, next) => {
   }
 });
 
-router.post('/logout', requireAuth, async (_req, res) => {
-  // Stateless JWT: client just discards. Could add a blacklist here.
+router.post('/logout', requireAuth, async (req: AuthedRequest, res) => {
+  if (req.user?.jti) revokeToken(req.user.jti);
   res.json({ ok: true });
 });
 

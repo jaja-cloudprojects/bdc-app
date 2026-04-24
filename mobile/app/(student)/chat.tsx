@@ -16,6 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { Header } from '@/components/Header';
 import { ChatBubble } from '@/components/ChatBubble';
+import { useStudentMenu } from '@/contexts/StudentMenuContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ChatMessage } from '@/services/api';
 import { Colors } from '@/constants/Colors';
@@ -62,6 +63,7 @@ const FALLBACK_MESSAGES: ChatMessage[] = [
 ];
 
 export default function ChatScreen() {
+  const { openMenu } = useStudentMenu();
   const { user } = useAuth();
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -137,7 +139,7 @@ export default function ChatScreen() {
   return (
     <View style={styles.root}>
       <Header
-        onMenuPress={() => router.back()}
+        onMenuPress={openMenu}
         showCart={false}
         rightAction={
           <Pressable

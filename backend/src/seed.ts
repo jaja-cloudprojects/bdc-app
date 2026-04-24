@@ -20,20 +20,22 @@ async function main() {
   });
   console.log(`✅ Admin: ${admin.email}`);
 
-  // Demo student user
-  const studentHash = await bcrypt.hash('password123', 10);
-  const student = await prisma.user.upsert({
-    where: { email: 'chloe@test.com' },
-    update: {},
-    create: {
-      email: 'chloe@test.com',
-      passwordHash: studentHash,
-      firstName: 'Chloé',
-      lastName: 'Demo',
-      role: 'STUDENT',
-    },
-  });
-  console.log(`✅ Student: ${student.email} / password123`);
+  // Demo student — development only, never seeded in production
+  if (process.env.NODE_ENV !== 'production') {
+    const studentHash = await bcrypt.hash('password123', 10);
+    const student = await prisma.user.upsert({
+      where: { email: 'chloe@test.com' },
+      update: {},
+      create: {
+        email: 'chloe@test.com',
+        passwordHash: studentHash,
+        firstName: 'Chloé',
+        lastName: 'Demo',
+        role: 'STUDENT',
+      },
+    });
+    console.log(`✅ Student demo: ${student.email} (dev only)`);
+  }
 
   // Categories
   const CLD = 'https://res.cloudinary.com/dlojepkis/image/upload';
@@ -109,10 +111,7 @@ async function main() {
   }
 
   console.log('🎉 Seed complete!');
-  console.log(`
-  ADMIN LOGIN:   ${env.adminEmail} / ${env.adminPassword}
-  STUDENT LOGIN: chloe@test.com / password123
-  `);
+  console.log(`✅ Admin: ${env.adminEmail} (password from ADMIN_PASSWORD env var)`);
 }
 
 main()

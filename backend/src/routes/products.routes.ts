@@ -16,6 +16,7 @@ function format(p: any) {
     description: p.description,
     isNew: p.isNew,
     inStock: p.inStock,
+    stock: p.stock ?? null,
   };
 }
 

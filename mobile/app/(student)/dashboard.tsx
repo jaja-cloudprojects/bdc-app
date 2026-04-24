@@ -11,10 +11,10 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 
 import { Header } from '@/components/Header';
-import { DrawerMenu } from '@/components/DrawerMenu';
 import { ActionTile } from '@/components/ActionTile';
 import { Button } from '@/components/Button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudentMenu } from '@/contexts/StudentMenuContext';
 import { api } from '@/services/api';
 import { Colors } from '@/constants/Colors';
 import { FontFamily, FontSize, LetterSpacing } from '@/constants/Typography';
@@ -39,9 +39,9 @@ const FALLBACK_MASTERCLASS = [
 ];
 
 export default function DashboardScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { openMenu } = useStudentMenu();
   const { width, scale } = useResponsive();
-  const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: news } = useQuery({
     queryKey: ['news', 'latest'],
@@ -58,19 +58,9 @@ export default function DashboardScreen() {
   const contentWidth = Math.min(width, MaxContentWidth);
   const sidePadding = scale({ phoneSm: Spacing.base, phone: Spacing.lg, tablet: Spacing['2xl'] });
 
-  const menuItems = [
-    { label: 'Tableau de bord', onPress: () => router.push('/(student)/dashboard' as any) },
-    { label: 'Mes documents', onPress: () => router.push('/(student)/documents' as any) },
-    { label: 'Mon profil', onPress: () => router.push('/(student)/profile' as any) },
-    { label: 'Masterclasses', onPress: () => router.push('/(student)/practical-sheets' as any) },
-    { label: 'Besoin d\'aide', onPress: () => router.push('/(student)/help' as any) },
-    { label: 'Chat support', onPress: () => router.push('/(student)/chat' as any) },
-    { label: 'Retour à la boutique', onPress: () => router.push('/') },
-  ];
-
   return (
     <View style={styles.root}>
-      <Header onMenuPress={() => setMenuOpen(true)} onCartPress={() => router.push('/')} />
+      <Header onMenuPress={openMenu} onCartPress={() => router.push('/')} />
 
       <ScrollView
         contentContainerStyle={[
@@ -176,7 +166,7 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Prochaines Masterclass</Text>
         <View style={styles.masterclassCard}>
           <View style={styles.masterclassList}>
-            {(masterclass ?? FALLBACK_MASTERCLASS).map((m: any) => (
+            {(masterclass ?? FALLBACK_MASTERCLASS).slice(0, 4).map((m: any) => (
               <View key={m.id} style={styles.mcRow}>
                 <View style={styles.mcDateBlock}>
                   <Text style={styles.mcDay}>
@@ -209,12 +199,6 @@ export default function DashboardScreen() {
         <View style={{ height: Spacing['3xl'] }} />
       </ScrollView>
 
-      <DrawerMenu
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        items={menuItems}
-        logoutItem={{ label: 'Déconnexion', onPress: logout }}
-      />
     </View>
   );
 }

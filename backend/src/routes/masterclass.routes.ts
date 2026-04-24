@@ -62,20 +62,19 @@ router.post('/:id/reserve', requireAuth, async (req: AuthedRequest, res, next) =
     const userId = req.user!.sub;
     const masterclassId = req.params.id;
 
-    const mc = await prisma.masterclass.findUnique({ where: { id: masterclassId } });
-    if (!mc) return res.status(404).json({ message: 'Masterclass not found' });
-    if (mc.spotsAvailable <= 0) {
-      return res.status(409).json({ message: 'Complet' });
-    }
-
-    // Atomic reservation
+    // All checks and updates inside the same transaction to prevent race conditions
+    let mcTitle = '';
     const reservation = await prisma.$transaction(async (tx) => {
+      const mc = await tx.masterclass.findUnique({ where: { id: masterclassId } });
+      if (!mc) throw Object.assign(new Error('Masterclass not found'), { status: 404 });
+      if (mc.spotsAvailable <= 0) throw Object.assign(new Error('Complet'), { status: 409 });
+
       const existing = await tx.reservation.findUnique({
         where: { userId_masterclassId: { userId, masterclassId } },
       });
-      if (existing) {
-        throw Object.assign(new Error('Déjà réservé'), { status: 409 });
-      }
+      if (existing) throw Object.assign(new Error('Déjà réservé'), { status: 409 });
+
+      mcTitle = mc.title;
       await tx.masterclass.update({
         where: { id: masterclassId },
         data: { spotsAvailable: { decrement: 1 } },
@@ -88,7 +87,7 @@ router.post('/:id/reserve', requireAuth, async (req: AuthedRequest, res, next) =
     // Push confirmation (non-blocking)
     sendPushToUsers([userId], {
       title: 'Réservation confirmée',
-      body: `Votre place pour « ${mc.title} » est réservée.`,
+      body: `Votre place pour « ${mcTitle} » est réservée.`,
       data: { type: 'reservation', masterclassId },
     }).catch(() => {});
 

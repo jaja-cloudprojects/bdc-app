@@ -36,8 +36,10 @@ router.get('/messages', requireAuth, async (req: AuthedRequest, res, next) => {
 });
 
 const sendSchema = z.object({
-  content: z.string().min(1).max(2000),
-  conversationId: z.string().optional(),
+  content: z.string().min(1).max(2000).transform((s) =>
+    s.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim()
+  ),
+  conversationId: z.string().uuid().optional(),
 });
 
 /**
