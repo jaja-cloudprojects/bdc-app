@@ -435,6 +435,22 @@ router.post('/notifications/inapp', async (req, res, next) => {
 // ============================================================================
 // CONVERSATIONS (messagerie BDC Bot admin)
 // ============================================================================
+router.post('/conversations', async (req, res, next) => {
+  try {
+    const { userId } = z.object({ userId: z.string().min(1) }).parse(req.body);
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable.' });
+    let conv = await prisma.conversation.findFirst({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!conv) {
+      conv = await prisma.conversation.create({ data: { userId } });
+    }
+    res.json({ id: conv.id });
+  } catch (e) { next(e); }
+});
+
 router.get('/conversations', async (_req, res, next) => {
   try {
     const conversations = await prisma.conversation.findMany({

@@ -1170,7 +1170,23 @@
 
           <!-- Panneau gauche : liste conversations -->
           <div class="convs-panel">
-            <div class="convs-panel-header">Conversations BDC Bot</div>
+            <div class="convs-panel-header" style="display:flex;align-items:center;justify-content:space-between">
+              <span>Conversations BDC Bot</span>
+              <button id="newConvBtn" title="Nouvelle conversation"
+                style="background:var(--pink);color:#fff;border:none;border-radius:6px;width:24px;height:24px;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:300;flex-shrink:0;transition:opacity .15s"
+                onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">+</button>
+            </div>
+
+            <!-- Panneau nouvelle conversation -->
+            <div id="newConvPanel" style="display:none;border-bottom:1px solid var(--border);background:var(--bg)">
+              <div style="padding:10px 12px">
+                <input id="newConvSearch" type="text" placeholder="Rechercher par nom ou email…"
+                  style="font-size:13px;padding:7px 10px;width:100%;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);outline:none;transition:border-color .15s"
+                  onfocus="this.style.borderColor='var(--pink)'" onblur="this.style.borderColor='var(--border)'" />
+                <div id="newConvResults" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
+              </div>
+            </div>
+
             <div class="convs-list" id="convsList">
               <div style="padding:16px;color:var(--muted);font-size:13px">Chargement…</div>
             </div>
@@ -1482,6 +1498,8 @@ function showTab(tab) {
     clearInterval(_convPollTimer);
     _convPollTimer = null;
     _activeConvId  = null;
+    const ncp = document.getElementById('newConvPanel');
+    if (ncp) ncp.style.display = 'none';
   }
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -2219,6 +2237,74 @@ async function sendAdminMessage() {
   }
 }
 
+/* ── NOUVELLE CONVERSATION ─────────────────────────── */
+let _allUsersCache = null;
+
+function openNewConvPanel() {
+  const panel  = document.getElementById('newConvPanel');
+  const search = document.getElementById('newConvSearch');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : '';
+  if (!isOpen) {
+    search.value = '';
+    document.getElementById('newConvResults').innerHTML = '';
+    search.focus();
+    loadNewConvUsers('');
+  }
+}
+
+async function loadNewConvUsers(query) {
+  const resultsEl = document.getElementById('newConvResults');
+  if (!resultsEl) return;
+  if (!_allUsersCache) {
+    resultsEl.innerHTML = '<div style="color:var(--muted);font-size:12.5px;padding:6px 4px">Chargement…</div>';
+    try { _allUsersCache = await req('/admin/users'); } catch {
+      resultsEl.innerHTML = '<div style="color:var(--red);font-size:12.5px;padding:6px 4px">Erreur de chargement.</div>';
+      return;
+    }
+  }
+  const q = query.toLowerCase().trim();
+  const filtered = (q
+    ? _allUsersCache.filter(u => `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(q))
+    : _allUsersCache
+  ).slice(0, 12);
+
+  if (!filtered.length) {
+    resultsEl.innerHTML = '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:10px">Aucun résultat.</div>';
+    return;
+  }
+  const roleLabels = { STUDENT: 'Élève', FORMATRICE: 'Formatrice', ADMIN: 'Admin', SUPER_ADMIN: 'SuperAdmin' };
+  const roleColors = { STUDENT: 'var(--blue)', FORMATRICE: '#16a34a', ADMIN: 'var(--pink)', SUPER_ADMIN: '#a5b4fc' };
+  resultsEl.innerHTML = filtered.map(u => `
+    <div class="new-conv-user" data-id="${u.id}"
+      style="display:flex;align-items:center;gap:8px;padding:7px 6px;border-radius:7px;cursor:pointer;transition:background .1s"
+      onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background=''">
+      <div class="avatar" style="width:30px;height:30px;font-size:12px;flex-shrink:0">${u.avatarUrl
+        ? `<img src="${escHtml(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+        : u.firstName.charAt(0).toUpperCase()}</div>
+      <div style="min-width:0;flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(u.firstName)} ${escHtml(u.lastName)}</div>
+        <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(u.email)}</div>
+      </div>
+      <span style="font-size:10px;font-weight:600;color:${roleColors[u.role]};flex-shrink:0">${roleLabels[u.role] || u.role}</span>
+    </div>`).join('');
+}
+
+async function startConversation(userId) {
+  try {
+    const { id } = await req('/admin/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+    document.getElementById('newConvPanel').style.display = 'none';
+    document.getElementById('newConvSearch').value = '';
+    await loadConversations();
+    openConversation(id);
+  } catch(e) {
+    toast(e.message, 'err');
+  }
+}
+
 /* ── SHOW LOGIN ────────────────────────────────────── */
 function showLogin() {
   token = null; refreshToken = null;
@@ -2767,6 +2853,13 @@ document.addEventListener('click', async e => {
   // Health Check — run
   if (e.target.id === 'runHealthBtn') { runHealthCheck(); return; }
 
+  // Nouvelle conversation — bouton +
+  if (e.target.id === 'newConvBtn') { openNewConvPanel(); return; }
+
+  // Nouvelle conversation — sélection d'un utilisateur
+  const newConvUser = e.target.closest('.new-conv-user');
+  if (newConvUser) { startConversation(newConvUser.dataset.id); return; }
+
   // Open conversation
   const convItem = e.target.closest('.conv-item[data-conv-id]');
   if (convItem) { openConversation(convItem.dataset.convId); return; }
@@ -2936,6 +3029,10 @@ document.addEventListener('keydown', e => {
 });
 
 document.addEventListener('input', e => {
+  if (e.target.id === 'newConvSearch') {
+    loadNewConvUsers(e.target.value);
+    return;
+  }
   if (e.target.id === 'chatInput') {
     const el = e.target;
     el.style.height = 'auto';
