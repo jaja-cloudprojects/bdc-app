@@ -1441,11 +1441,48 @@ function sortAndRenderNotifs() {
   }).join('');
 }
 
+function _isDebugUser(u) {
+  const hay = (u.email + ' ' + u.firstName + ' ' + u.lastName).toLowerCase();
+  return /\b(test|debug|demo)\b/.test(hay);
+}
+
+function _renderUserRow(u) {
+  return `<tr>
+    <td>
+      <div class="user-cell">
+        <div class="avatar">${u.avatarUrl
+          ? `<img src="${u.avatarUrl}" alt="${u.firstName}" onerror="this.parentElement.textContent='${u.firstName.charAt(0).toUpperCase()}'">`
+          : u.firstName.charAt(0).toUpperCase()}</div>
+        <div><div class="user-name">${u.firstName} ${u.lastName}</div></div>
+      </div>
+    </td>
+    <td style="color:var(--muted)">${u.email}</td>
+    <td>
+      <span class="badge badge-${u.role === 'SUPER_ADMIN' ? 'superadmin' : u.role === 'ADMIN' ? 'admin' : u.role === 'FORMATRICE' ? 'formatrice' : 'student'}">
+        ${u.role === 'SUPER_ADMIN' ? 'SuperAdmin' : u.role === 'ADMIN' ? 'Admin' : u.role === 'FORMATRICE' ? 'Formatrice' : 'Élève'}
+      </span>
+    </td>
+    <td style="color:var(--muted);font-size:12.5px">${fmt(u.createdAt)}</td>
+    <td>
+      <button class="btn btn-secondary btn-sm edit-user"
+        data-id="${u.id}" data-first="${u.firstName}" data-last="${u.lastName}"
+        data-email="${u.email}" data-role="${u.role}">
+        Modifier
+      </button>
+    </td>
+    <td>
+      <button class="btn btn-danger btn-sm del-user" data-id="${u.id}" data-name="${u.firstName} ${u.lastName}">
+        Supprimer
+      </button>
+    </td>
+  </tr>`;
+}
+
 function sortAndRender() {
   const col = _sortCol;
   const dir = _sortDir;
 
-  const sorted = [..._usersCache].sort((a, b) => {
+  const compareFn = (a, b) => {
     let va, vb;
     if (col === 'name') {
       va = `${a.firstName} ${a.lastName}`.toLowerCase();
@@ -1454,8 +1491,7 @@ function sortAndRender() {
       va = a.email.toLowerCase();
       vb = b.email.toLowerCase();
     } else if (col === 'role') {
-      va = a.role;
-      vb = b.role;
+      va = a.role; vb = b.role;
     } else {
       va = new Date(a.createdAt).getTime();
       vb = new Date(b.createdAt).getTime();
@@ -1463,46 +1499,32 @@ function sortAndRender() {
     if (va < vb) return dir === 'asc' ? -1 : 1;
     if (va > vb) return dir === 'asc' ?  1 : -1;
     return 0;
-  });
+  };
 
-  // Update header indicators
+  const realUsers  = [..._usersCache].filter(u => !_isDebugUser(u)).sort(compareFn);
+  const debugUsers = [..._usersCache].filter(u =>  _isDebugUser(u)).sort(compareFn);
+
   document.querySelectorAll('#tab-users th.sortable').forEach(th => {
     th.classList.remove('sort-asc', 'sort-desc');
     if (th.dataset.sort === col) th.classList.add('sort-' + dir);
   });
 
   const tbody = document.getElementById('usersTbody');
-  tbody.innerHTML = sorted.map(u => `
-    <tr>
-      <td>
-        <div class="user-cell">
-          <div class="avatar">${u.avatarUrl
-            ? `<img src="${u.avatarUrl}" alt="${u.firstName}" onerror="this.parentElement.textContent='${u.firstName.charAt(0).toUpperCase()}'">`
-            : u.firstName.charAt(0).toUpperCase()}</div>
-          <div><div class="user-name">${u.firstName} ${u.lastName}</div></div>
-        </div>
-      </td>
-      <td style="color:var(--muted)">${u.email}</td>
-      <td>
-        <span class="badge badge-${u.role === 'SUPER_ADMIN' ? 'superadmin' : u.role === 'ADMIN' ? 'admin' : u.role === 'FORMATRICE' ? 'formatrice' : 'student'}">
-          ${u.role === 'SUPER_ADMIN' ? 'SuperAdmin' : u.role === 'ADMIN' ? 'Admin' : u.role === 'FORMATRICE' ? 'Formatrice' : 'Élève'}
+  let html = realUsers.map(_renderUserRow).join('');
+
+  if (debugUsers.length) {
+    html += `<tr>
+      <td colspan="6" style="padding:10px 12px 6px;background:var(--bg);border-top:2px solid var(--border)">
+        <span style="font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:6px">
+          <span style="background:#292524;color:#a8a29e;padding:2px 8px;border-radius:4px;font-size:10px;letter-spacing:1px">DEBUG</span>
+          ${debugUsers.length} compte${debugUsers.length > 1 ? 's' : ''} de test
         </span>
       </td>
-      <td style="color:var(--muted);font-size:12.5px">${fmt(u.createdAt)}</td>
-      <td>
-        <button class="btn btn-secondary btn-sm edit-user"
-          data-id="${u.id}" data-first="${u.firstName}" data-last="${u.lastName}"
-          data-email="${u.email}" data-role="${u.role}">
-          Modifier
-        </button>
-      </td>
-      <td>
-        <button class="btn btn-danger btn-sm del-user" data-id="${u.id}" data-name="${u.firstName} ${u.lastName}">
-          Supprimer
-        </button>
-      </td>
-    </tr>
-  `).join('');
+    </tr>`;
+    html += debugUsers.map(_renderUserRow).join('');
+  }
+
+  tbody.innerHTML = html;
 }
 
 async function loadUsers() {
