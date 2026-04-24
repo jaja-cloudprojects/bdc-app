@@ -1389,10 +1389,11 @@ async function loadStats() {
 }
 
 /* ── USERS ─────────────────────────────────────────── */
-let _editingUserId = null;
-let _usersCache    = [];
-let _sortCol       = 'createdAt';
-let _sortDir       = 'desc';
+let _editingUserId  = null;
+let _usersCache     = [];
+let _sortCol        = 'createdAt';
+let _sortDir        = 'desc';
+let _debugCollapsed = false;
 
 let _notifCache    = [];
 let _notifSortCol  = 'date';
@@ -1512,18 +1513,29 @@ function sortAndRender() {
   let html = realUsers.map(_renderUserRow).join('');
 
   if (debugUsers.length) {
-    html += `<tr>
-      <td colspan="6" style="padding:10px 12px 6px;background:var(--bg);border-top:2px solid var(--border)">
+    const arrow = _debugCollapsed ? '▶' : '▼';
+    html += `<tr id="debug-separator" style="cursor:pointer" onclick="toggleDebugSection()">
+      <td colspan="6" style="padding:10px 12px 6px;background:var(--bg);border-top:2px solid var(--border);user-select:none">
         <span style="font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:6px">
+          <span id="debug-arrow" style="font-size:11px;color:var(--muted);transition:transform .2s">${arrow}</span>
           <span style="background:#292524;color:#a8a29e;padding:2px 8px;border-radius:4px;font-size:10px;letter-spacing:1px">DEBUG</span>
           ${debugUsers.length} compte${debugUsers.length > 1 ? 's' : ''} de test
         </span>
       </td>
     </tr>`;
-    html += debugUsers.map(_renderUserRow).join('');
+    html += debugUsers.map(u => _renderUserRow(u).replace('<tr>', `<tr class="debug-row"${_debugCollapsed ? ' style="display:none"' : ''}>`) ).join('');
   }
 
   tbody.innerHTML = html;
+}
+
+function toggleDebugSection() {
+  _debugCollapsed = !_debugCollapsed;
+  document.querySelectorAll('.debug-row').forEach(tr => {
+    tr.style.display = _debugCollapsed ? 'none' : '';
+  });
+  const arrow = document.getElementById('debug-arrow');
+  if (arrow) arrow.textContent = _debugCollapsed ? '▶' : '▼';
 }
 
 async function loadUsers() {
