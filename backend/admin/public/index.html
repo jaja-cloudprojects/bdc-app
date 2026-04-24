@@ -704,6 +704,11 @@
     </nav>
 
     <div class="sb-footer">
+      <div id="sb-user-info" style="padding:8px 12px 10px;font-size:12px;color:var(--muted);line-height:1.4;display:none">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Connecté</div>
+        <div id="sb-user-name" style="font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+        <div id="sb-user-role" style="font-size:11px;margin-top:1px"></div>
+      </div>
       <button id="logoutBtn" class="btn-logout">
         <span class="nav-icon">←</span> Déconnexion
       </button>
@@ -1933,6 +1938,15 @@ async function boot() {
     try { _adminUser = await req('/auth/me'); } catch { /* ignore */ }
   }
   applyRoleUI();
+  if (_adminUser) {
+    const roleLabels = { STUDENT: 'Élève', FORMATRICE: 'Formatrice', ADMIN: 'Admin', SUPER_ADMIN: 'SuperAdmin' };
+    const roleColors = { FORMATRICE: '#16a34a', ADMIN: 'var(--pink)', SUPER_ADMIN: '#a5b4fc' };
+    document.getElementById('sb-user-name').textContent = `${_adminUser.firstName} ${_adminUser.lastName}`;
+    const roleEl = document.getElementById('sb-user-role');
+    roleEl.textContent = roleLabels[_adminUser.role] || _adminUser.role;
+    roleEl.style.color = roleColors[_adminUser.role] || 'var(--muted)';
+    document.getElementById('sb-user-info').style.display = '';
+  }
   // Poll conversations en permanence pour maintenir le badge à jour
   clearInterval(_globalPollTimer);
   loadConversations();
