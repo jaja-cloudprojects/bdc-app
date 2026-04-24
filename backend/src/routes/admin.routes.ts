@@ -17,9 +17,9 @@ const router = Router();
 router.use(requireAdmin);
 
 // ============================================================================
-// USERS — SuperAdmin only
+// USERS
 // ============================================================================
-router.get('/users', requireSuperAdmin, async (_req, res, next) => {
+router.get('/users', async (_req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -40,7 +40,7 @@ const createUserSchema = z.object({
   role: z.enum(['STUDENT', 'FORMATRICE', 'ADMIN', 'SUPER_ADMIN']).default('STUDENT'),
 });
 
-router.post('/users', requireSuperAdmin, async (req, res, next) => {
+router.post('/users', async (req, res, next) => {
   try {
     const data = createUserSchema.parse(req.body);
     const passwordHash = await bcrypt.hash(data.password, 10);
@@ -66,7 +66,7 @@ const updateUserSchema = z.object({
   role:      z.enum(['STUDENT', 'FORMATRICE', 'ADMIN', 'SUPER_ADMIN']).optional(),
 });
 
-router.patch('/users/:id', requireSuperAdmin, async (req, res, next) => {
+router.patch('/users/:id', async (req, res, next) => {
   try {
     const data = updateUserSchema.parse(req.body);
 
@@ -93,7 +93,7 @@ router.patch('/users/:id', requireSuperAdmin, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete('/users/:id', requireSuperAdmin, async (req, res, next) => {
+router.delete('/users/:id', async (req, res, next) => {
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
@@ -303,9 +303,9 @@ router.delete('/masterclass/:id', async (req, res, next) => {
 });
 
 // ============================================================================
-// DOCUMENTS — SuperAdmin only
+// DOCUMENTS
 // ============================================================================
-router.get('/documents', requireSuperAdmin, async (_req, res, next) => {
+router.get('/documents', async (_req, res, next) => {
   try {
     const docs = await prisma.document.findMany({ orderBy: { uploadedAt: 'desc' } });
     res.json(docs);
@@ -317,7 +317,7 @@ const documentBodySchema = z.object({
   category: z.string().min(1).max(100).optional(),
 });
 
-router.post('/documents', requireSuperAdmin, pdfUpload.single('file'), async (req, res, next) => {
+router.post('/documents', pdfUpload.single('file'), async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'Fichier PDF requis.' });
@@ -345,7 +345,7 @@ router.post('/documents', requireSuperAdmin, pdfUpload.single('file'), async (re
   } catch (e) { next(e); }
 });
 
-router.delete('/documents/:id', requireSuperAdmin, async (req, res, next) => {
+router.delete('/documents/:id', async (req, res, next) => {
   try {
     const doc = await prisma.document.findUnique({ where: { id: req.params.id } });
     if (!doc) return res.status(404).json({ message: 'Document introuvable.' });
@@ -389,7 +389,7 @@ const pushSchema = z.object({
   userIds: z.array(z.string()).optional(), // if omitted => broadcast
 });
 
-router.post('/notifications/push', requireSuperAdmin, async (req, res, next) => {
+router.post('/notifications/push', async (req, res, next) => {
   try {
     const { title, body, data, userIds } = pushSchema.parse(req.body);
     const result = userIds?.length
@@ -399,7 +399,7 @@ router.post('/notifications/push', requireSuperAdmin, async (req, res, next) => 
   } catch (e) { next(e); }
 });
 
-router.get('/notifications', requireSuperAdmin, async (_req, res, next) => {
+router.get('/notifications', async (_req, res, next) => {
   try {
     const items = await prisma.notification.findMany({
       orderBy: { createdAt: 'desc' },
@@ -409,7 +409,7 @@ router.get('/notifications', requireSuperAdmin, async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete('/notifications', requireSuperAdmin, async (_req, res, next) => {
+router.delete('/notifications', async (_req, res, next) => {
   try {
     const { count } = await prisma.notification.deleteMany({});
     res.json({ ok: true, deleted: count });
@@ -422,7 +422,7 @@ const inappSchema = z.object({
   body: z.string().min(1).max(400),
 });
 
-router.post('/notifications/inapp', requireSuperAdmin, async (req, res, next) => {
+router.post('/notifications/inapp', async (req, res, next) => {
   try {
     const { title, body } = inappSchema.parse(req.body);
     const item = await prisma.notification.create({
@@ -533,7 +533,7 @@ const campaignSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-router.get('/campaigns', requireSuperAdmin, async (_req, res, next) => {
+router.get('/campaigns', async (_req, res, next) => {
   try {
     const campaigns = await prisma.notificationCampaign.findMany({
       orderBy: { createdAt: 'desc' },
@@ -542,7 +542,7 @@ router.get('/campaigns', requireSuperAdmin, async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/campaigns', requireSuperAdmin, async (req, res, next) => {
+router.post('/campaigns', async (req, res, next) => {
   try {
     const data = campaignSchema.parse(req.body);
 
@@ -570,7 +570,7 @@ router.post('/campaigns', requireSuperAdmin, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.patch('/campaigns/:id', requireSuperAdmin, async (req, res, next) => {
+router.patch('/campaigns/:id', async (req, res, next) => {
   try {
     const data = campaignSchema.partial().parse(req.body);
 
@@ -602,7 +602,7 @@ router.patch('/campaigns/:id', requireSuperAdmin, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.delete('/campaigns/:id', requireSuperAdmin, async (req, res, next) => {
+router.delete('/campaigns/:id', async (req, res, next) => {
   try {
     unregisterRecurring(req.params.id);
     await prisma.notificationCampaign.delete({ where: { id: req.params.id } });
@@ -610,7 +610,7 @@ router.delete('/campaigns/:id', requireSuperAdmin, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/campaigns/:id/send', requireSuperAdmin, async (req, res, next) => {
+router.post('/campaigns/:id/send', async (req, res, next) => {
   try {
     await fireCampaign(req.params.id);
     const campaign = await prisma.notificationCampaign.findUnique({ where: { id: req.params.id } });
