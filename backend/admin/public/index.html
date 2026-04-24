@@ -728,11 +728,57 @@
     body.dark .conv-item.active { background: var(--pink-lt); }
     body.dark .msg-row.msg-user .msg-bubble { background: var(--card); border-color: var(--border); }
     body.dark details summary::-webkit-details-marker { color: var(--muted); }
+
+    /* ── LOADING SPLASH ─────────────────────────────── */
+    #loading-page {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      transition: opacity .35s ease;
+    }
+
+    #loading-page .splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 36px;
+    }
+
+    #loading-page .splash-logo {
+      width: clamp(160px, 40vw, 220px);
+      height: auto;
+      display: block;
+    }
+
+    .splash-loader {
+      width: 30px;
+      height: 30px;
+      border: 2px solid rgba(0,0,0,.1);
+      border-top-color: #111;
+      border-radius: 50%;
+      animation: splash-spin .75s linear infinite;
+    }
+
+    @keyframes splash-spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
 <body>
 <script>if(localStorage.getItem('bdc_theme')==='dark')document.body.classList.add('dark');</script>
+
+<!-- ═══════════════════ LOADING SPLASH ══════════════ -->
+<div id="loading-page" class="hidden">
+  <div class="splash-inner">
+    <img src="logo.png" alt="Beauté du Cil" class="splash-logo" />
+    <div class="splash-loader"></div>
+  </div>
+</div>
 
 <!-- ═══════════════════ LOGIN ═══════════════════════ -->
 <div id="login-page">
@@ -1468,7 +1514,7 @@ async function login() {
       refreshToken = data.refreshToken;
       localStorage.setItem('bdc_admin_refresh', refreshToken);
     }
-    boot();
+    showSplash();
   } catch {
     errEl.textContent = 'Email ou mot de passe incorrect.';
     errEl.classList.remove('hidden');
@@ -1476,6 +1522,22 @@ async function login() {
     btn.disabled = false;
     btn.textContent = 'Se connecter';
   }
+}
+
+/* ── SPLASH ────────────────────────────────────────── */
+function showSplash() {
+  document.getElementById('login-page').classList.add('hidden');
+  const splash = document.getElementById('loading-page');
+  splash.classList.remove('hidden');
+  splash.style.opacity = '1';
+  setTimeout(() => {
+    splash.style.opacity = '0';
+    setTimeout(() => {
+      splash.classList.add('hidden');
+      splash.style.opacity = '';
+      boot();
+    }, 350);
+  }, 2000);
 }
 
 /* ── STATS ─────────────────────────────────────────── */
