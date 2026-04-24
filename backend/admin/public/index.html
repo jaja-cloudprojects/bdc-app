@@ -1442,10 +1442,7 @@ function sortAndRenderNotifs() {
 }
 
 function _isDebugUser(u) {
-  const hay = (u.email + ' ' + u.firstName + ' ' + u.lastName).toLowerCase();
-  if (/\b(test|debug|demo)\b/.test(hay)) return true;
-  if (u.firstName.trim().toLowerCase() === 'ne pas' && u.lastName.trim().toLowerCase() === 'toucher') return true;
-  return false;
+  return u.firstName.trim().toLowerCase() === 'test';
 }
 
 function _renderUserRow(u) {
