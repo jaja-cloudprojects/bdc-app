@@ -630,10 +630,109 @@
 
     .chat-send-btn:hover { opacity: .87; }
     .chat-send-btn:disabled { opacity: .4; cursor: default; }
+
+    /* ── SMOOTH UX ──────────────────────────────────── */
+    .nav-item.active { position: relative; }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 6px; bottom: 6px;
+      width: 3px;
+      background: var(--pink);
+      border-radius: 0 3px 3px 0;
+    }
+
+    .stat-card { transition: transform .18s ease, box-shadow .18s ease; }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    .card { transition: box-shadow .18s ease; }
+
+    input:focus, select:focus, textarea:focus {
+      box-shadow: 0 0 0 3px rgba(232,88,110,.12);
+    }
+
+    .section.active { animation: tab-in .17s ease; }
+    @keyframes tab-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-overlay:not(.hidden) .modal {
+      animation: modal-pop .22s cubic-bezier(.34,1.44,.64,1);
+    }
+    @keyframes modal-pop {
+      from { opacity: 0; transform: scale(.96) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)   translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    #darkToggleBtn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 9px;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1;
+      transition: color .14s, border-color .14s, background .14s;
+      flex-shrink: 0;
+    }
+    #darkToggleBtn:hover { color: var(--text); border-color: var(--muted); background: var(--bg); }
+
+    /* ── DARK MODE ──────────────────────────────────── */
+    body.dark {
+      --bg:      #0f1117;
+      --sidebar: #13151e;
+      --card:    #1c1f2a;
+      --border:  #252836;
+      --text:    #dde1ec;
+      --muted:   #6b6f7c;
+      --light:   #181b24;
+      --pink-lt: rgba(232, 88,110,.14);
+      --red-lt:  rgba(239, 68, 68,.14);
+      --blue-lt: rgba( 59,130,246,.13);
+    }
+
+    body.dark .stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+    body.dark tbody tr:hover td { background: rgba(255,255,255,.025); }
+    body.dark .modal { box-shadow: 0 20px 60px rgba(0,0,0,.55); }
+    body.dark .login-card { box-shadow: 0 4px 32px rgba(0,0,0,.45); }
+    body.dark .modal-overlay { background: rgba(0,0,0,.55); }
+
+    body.dark input[type=text],
+    body.dark input[type=email],
+    body.dark input[type=password],
+    body.dark input[type=number],
+    body.dark input[type=datetime-local],
+    body.dark select,
+    body.dark textarea { background: #0c0e14; }
+    body.dark .chat-textarea { background: #0c0e14; }
+    body.dark .stock-input { background: #0c0e14 !important; color: var(--text) !important; border-color: var(--border) !important; }
+    body.dark #dbQueryInput { background: #0c0e14 !important; color: var(--text) !important; }
+    body.dark .badge-student    { background: rgba(59,130,246,.15);  color: #93c5fd; }
+    body.dark .badge-formatrice { background: rgba(22,163,74,.15);   color: #86efac; }
+    body.dark .badge-admin      { background: rgba(232,88,110,.15);  color: #fca5a5; }
+    body.dark .badge-superadmin { background: rgba(165,180,252,.12); color: #a5b4fc; }
+    body.dark .btn-secondary    { background: var(--card); border-color: var(--border); color: var(--text); }
+    body.dark .btn-secondary:hover { background: var(--border); }
+    body.dark .nav-item:hover { background: rgba(255,255,255,.04); color: var(--text); }
+    body.dark .conv-item:hover { background: rgba(255,255,255,.03); }
+    body.dark .conv-item.active { background: var(--pink-lt); }
+    body.dark .msg-row.msg-user .msg-bubble { background: var(--card); border-color: var(--border); }
+    body.dark details summary::-webkit-details-marker { color: var(--muted); }
   </style>
 </head>
 
 <body>
+<script>if(localStorage.getItem('bdc_theme')==='dark')document.body.classList.add('dark');</script>
 
 <!-- ═══════════════════ LOGIN ═══════════════════════ -->
 <div id="login-page">
@@ -718,7 +817,10 @@
   <div id="main">
     <div class="page-header">
       <span id="pageTitle" class="page-title">Dashboard</span>
-      <div id="pageActions"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="darkToggleBtn" onclick="toggleDarkMode()" title="Mode sombre / clair">☽</button>
+        <div id="pageActions"></div>
+      </div>
     </div>
 
     <div class="page-body">
@@ -2679,6 +2781,20 @@ document.addEventListener('change', e => {
     document.getElementById('camp_cron_preview').textContent  = isCustom ? '' : '';
   }
 });
+
+/* ── DARK MODE ─────────────────────────────────────── */
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('bdc_theme', isDark ? 'dark' : 'light');
+  _syncDarkBtn(isDark);
+}
+
+function _syncDarkBtn(isDark) {
+  const btn = document.getElementById('darkToggleBtn');
+  if (btn) btn.textContent = isDark ? '☀' : '☽';
+}
+
+_syncDarkBtn(document.body.classList.contains('dark'));
 
 // Auto-login
 if (token) boot();
