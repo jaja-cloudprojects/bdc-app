@@ -6,6 +6,15 @@ import { env } from './env';
 const AVATAR_SIZE = 400;
 const AVATAR_QUALITY = 82;
 
+// Actu image: 800×450 (16:9) WebP quality 72 → ~20-40 KB
+const ACTU_WIDTH = 800;
+const ACTU_HEIGHT = 450;
+const ACTU_QUALITY = 72;
+
+// Product image: 600×600 square WebP quality 78 → ~15-30 KB
+const PRODUCT_SIZE = 600;
+const PRODUCT_QUALITY = 78;
+
 let _supabase: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
@@ -64,6 +73,73 @@ export async function getDocumentSignedUrl(storagePath: string): Promise<string>
 export async function deleteDocument(storagePath: string): Promise<void> {
   const supabase = getClient();
   await supabase.storage.from(env.supabaseDocumentsBucket).remove([storagePath]);
+}
+
+function extractPathFromPublicUrl(publicUrl: string, bucket: string): string | null {
+  const marker = `/object/public/${bucket}/`;
+  const idx = publicUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(publicUrl.slice(idx + marker.length).split('?')[0]);
+}
+
+async function ensurePublicBucket(supabase: SupabaseClient, bucket: string) {
+  const { data: buckets } = await supabase.storage.listBuckets();
+  if (!buckets?.find((b) => b.name === bucket)) {
+    await supabase.storage.createBucket(bucket, { public: true });
+  }
+}
+
+export async function uploadActuImage(fileBuffer: Buffer): Promise<string> {
+  const supabase = getClient();
+  const bucket = 'actus';
+  await ensurePublicBucket(supabase, bucket);
+
+  const compressed = await sharp(fileBuffer)
+    .rotate()
+    .resize(ACTU_WIDTH, ACTU_HEIGHT, { fit: 'cover', position: 'centre' })
+    .webp({ quality: ACTU_QUALITY, effort: 4 })
+    .toBuffer();
+
+  const storagePath = `${Date.now()}.webp`;
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(storagePath, compressed, { contentType: 'image/webp', upsert: false });
+  if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
+export async function deleteActuImage(imageUrl: string): Promise<void> {
+  const supabase = getClient();
+  const storagePath = extractPathFromPublicUrl(imageUrl, 'actus');
+  if (storagePath) await supabase.storage.from('actus').remove([storagePath]);
+}
+
+export async function uploadProductImage(productId: string, fileBuffer: Buffer): Promise<string> {
+  const supabase = getClient();
+  const bucket = 'produits';
+  await ensurePublicBucket(supabase, bucket);
+
+  const compressed = await sharp(fileBuffer)
+    .rotate()
+    .resize(PRODUCT_SIZE, PRODUCT_SIZE, { fit: 'cover', position: 'centre' })
+    .webp({ quality: PRODUCT_QUALITY, effort: 4 })
+    .toBuffer();
+
+  const storagePath = `${productId}.webp`;
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(storagePath, compressed, { contentType: 'image/webp', upsert: true });
+  if (error) throw new Error(`Supabase upload failed: ${error.message}`);
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+export async function deleteProductImage(productId: string): Promise<void> {
+  const supabase = getClient();
+  await supabase.storage.from('produits').remove([`${productId}.webp`]);
 }
 
 export async function uploadAvatar(

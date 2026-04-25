@@ -189,6 +189,53 @@ open_chrome_admin() {
   fi
 }
 
+reload_backend() {
+  echo ""
+  echo -e "  ${BOLD}${WHITE}Rechargement des serveurs${R}"
+  separator
+
+  step "Arrêt des containers…"
+  cd "$ROOT"
+  docker compose down 2>&1 | grep -E "Stopping|Removed|stopped" | \
+    sed "s/^/  ${GRAY}  /" | sed "s/$/${R}/" || true
+
+  step "Relance des containers (db + api)…"
+  docker compose up -d --build 2>&1 | grep -E "Built|Started|Recreated|Running" | \
+    sed "s/^/  ${GRAY}  /" | sed "s/$/${R}/" || true
+
+  step "Attente que l'API soit prête…"
+  local max=30 count=0
+  echo -ne "  ${CYAN}›${R}  Chargement"
+  until curl -sf "http://localhost:4000/health" &>/dev/null; do
+    echo -n "."
+    sleep 2
+    count=$((count + 1))
+    if [[ $count -ge $max ]]; then
+      echo ""
+      fail "L'API ne répond pas. Logs : ${BOLD}docker logs bdc-app-api-1${R}"
+      return 1
+    fi
+  done
+  echo ""
+
+  # Ouvre Chrome sur l'admin avec un paramètre timestamp pour bypasser le cache navigateur
+  local url="http://localhost:4000/admin?v=$(date +%s)"
+  osascript <<APPLESCRIPT 2>/dev/null || open -a "Google Chrome" "$url" 2>/dev/null || open "$url"
+tell application "Google Chrome"
+  activate
+  if (count of windows) > 0 then
+    set URL of active tab of front window to "$url"
+  else
+    open location "$url"
+  end if
+end tell
+APPLESCRIPT
+
+  echo ""
+  ok "${BOLD}Serveurs rechargés${R}  →  ${CYAN}http://localhost:4000/admin${R}"
+  info "La page admin a été rouverte avec le cache vidé"
+}
+
 # ── Expo / Mobile ─────────────────────────────────────────────
 start_expo() {
   local ip
@@ -253,6 +300,7 @@ show_menu() {
   separator
   echo -e "  ${BOLD}${CYAN} 6${R}  📊  Statut des services"
   echo -e "  ${BOLD}${CYAN} 7${R}  📋  Logs de l'API  ${GRAY}(50 dernières lignes)${R}"
+  echo -e "  ${BOLD}${CYAN} 8${R}  🔄  Rechargement des serveurs  ${GRAY}(redémarre + vide le cache)${R}"
   separator
   echo -e "  ${BOLD}${CYAN} 0${R}  ✕   Quitter"
   echo ""
@@ -366,6 +414,19 @@ main() {
         show_status
         ;;
 
+      8)
+        clear_screen
+        print_header
+        reload_backend || true
+        echo ""
+        separator
+        echo ""
+        read -rp "  Appuyez sur Entrée pour revenir au menu…" _
+        clear_screen
+        print_header
+        show_status
+        ;;
+
       0)
         clear_screen
         echo ""
@@ -375,7 +436,7 @@ main() {
         ;;
 
       *)
-        warn "Option invalide. Entrez un chiffre entre 0 et 7."
+        warn "Option invalide. Entrez un chiffre entre 0 et 8."
         ;;
     esac
   done

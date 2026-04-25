@@ -44,6 +44,18 @@ export const avatarUpload = multer({
   },
 });
 
+// Memory-based upload for generic images (actus, produits) → buffer passed to Supabase + sharp
+export const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB max input (sharp will compress)
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    const ok = allowed.test(file.mimetype) || allowed.test(path.extname(file.originalname).toLowerCase());
+    if (ok) cb(null, true);
+    else cb(new Error('Format non supporté (jpg, png, webp)'));
+  },
+});
+
 // Memory-based upload for PDF documents → buffer passed directly to Supabase
 export const pdfUpload = multer({
   storage: multer.memoryStorage(),

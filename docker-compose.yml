@@ -42,7 +42,9 @@ services:
       - "4000:4000"
     volumes:
       - bdc_uploads:/app/uploads
+      - bdc_backups:/app/backups
 
 volumes:
   bdc_pgdata:
   bdc_uploads:
+  bdc_backups:

@@ -3,13 +3,17 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import path from 'path';
 import fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import cron from 'node-cron';
+
+const execFileAsync = promisify(execFile);
 import { prisma } from '../config/database';
 import { requireAdmin, requireSuperAdmin, AuthedRequest } from '../middleware/auth';
-import { upload, fileUrl, pdfUpload } from '../middleware/upload';
+import { upload, fileUrl, pdfUpload, imageUpload } from '../middleware/upload';
 import { broadcastPush, sendPushToUsers } from '../services/notification.service';
 import { registerRecurring, unregisterRecurring, fireCampaign } from '../services/campaign.scheduler';
-import { uploadDocument, deleteDocument } from '../config/supabase';
+import { uploadDocument, deleteDocument, uploadActuImage, deleteActuImage, uploadProductImage, deleteProductImage } from '../config/supabase';
 
 const router = Router();
 
@@ -181,8 +185,28 @@ router.patch('/products/:id/stock', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.post('/products/:id/upload-image', imageUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Fichier requis.' });
+    const product = await prisma.product.findUnique({ where: { id: req.params.id } });
+    if (!product) return res.status(404).json({ message: 'Produit introuvable.' });
+    const imageUrl = await uploadProductImage(req.params.id, req.file.buffer);
+    const updated = await prisma.product.update({ where: { id: req.params.id }, data: { imageUrl } });
+    res.json(updated);
+  } catch (e) { next(e); }
+});
+
+router.delete('/products/:id/image', async (req, res, next) => {
+  try {
+    deleteProductImage(req.params.id).catch(() => {});
+    const updated = await prisma.product.update({ where: { id: req.params.id }, data: { imageUrl: null } });
+    res.json(updated);
+  } catch (e) { next(e); }
+});
+
 router.delete('/products/:id', async (req, res, next) => {
   try {
+    deleteProductImage(req.params.id).catch(() => {});
     await prisma.product.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (e) { next(e); }
@@ -191,6 +215,8 @@ router.delete('/products/:id', async (req, res, next) => {
 // ============================================================================
 // NEWS
 // ============================================================================
+const NEWS_MAX = 3;
+
 const newsSchema = z.object({
   title: z.string().min(1),
   subtitle: z.string().optional(),
@@ -199,8 +225,20 @@ const newsSchema = z.object({
   publishedAt: z.string().datetime().optional(),
 });
 
+router.post('/news/upload-image', imageUpload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Fichier requis.' });
+    const url = await uploadActuImage(req.file.buffer);
+    res.json({ url });
+  } catch (e) { next(e); }
+});
+
 router.post('/news', async (req, res, next) => {
   try {
+    const count = await prisma.newsItem.count();
+    if (count >= NEWS_MAX) {
+      return res.status(400).json({ message: `Maximum ${NEWS_MAX} actualités. Supprimez-en une avant d'en créer une nouvelle.` });
+    }
     const data = newsSchema.parse(req.body);
     const item = await prisma.newsItem.create({
       data: {
@@ -220,6 +258,10 @@ router.post('/news', async (req, res, next) => {
 
 router.delete('/news/:id', async (req, res, next) => {
   try {
+    const item = await prisma.newsItem.findUnique({ where: { id: req.params.id } });
+    if (item?.imageUrl) {
+      deleteActuImage(item.imageUrl).catch(() => {});
+    }
     await prisma.newsItem.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   } catch (e) { next(e); }
@@ -451,6 +493,15 @@ router.post('/conversations', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.delete('/conversations/:id', async (req, res, next) => {
+  try {
+    const conv = await prisma.conversation.findUnique({ where: { id: req.params.id } });
+    if (!conv) return res.status(404).json({ message: 'Conversation introuvable.' });
+    await prisma.conversation.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 router.get('/conversations', async (_req, res, next) => {
   try {
     const conversations = await prisma.conversation.findMany({
@@ -677,6 +728,83 @@ router.post('/db-query', requireSuperAdmin, async (req, res, next) => {
     const { sql } = dbQuerySchema.parse(req.body);
     const rows = await prisma.$queryRawUnsafe(sql);
     res.json({ rows });
+  } catch (e) { next(e); }
+});
+
+// ============================================================================
+// BACKUP — SuperAdmin only
+// ============================================================================
+const BACKUP_DIR = '/app/backups';
+
+function parseDatabaseUrl(url: string) {
+  const m = url.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/([^?]+)/);
+  if (!m) throw new Error('DATABASE_URL invalide');
+  return { user: m[1], password: m[2], host: m[3], port: m[4], db: m[5] };
+}
+
+// POST /admin/backup — crée une sauvegarde pg_dump (format custom)
+router.post('/backup', requireSuperAdmin, async (_req, res, next) => {
+  try {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+
+    const { user, password, host, port, db } = parseDatabaseUrl(process.env.DATABASE_URL ?? '');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename  = `backup_${timestamp}.dump`;
+    const filepath  = path.join(BACKUP_DIR, filename);
+
+    await execFileAsync('pg_dump', [
+      '-h', host, '-p', port, '-U', user, '-d', db,
+      '--format=custom', '--no-password', '-f', filepath,
+    ], { env: { ...process.env, PGPASSWORD: password } });
+
+    // Vérification : pg_restore --list doit retourner au moins une ligne
+    const { stdout } = await execFileAsync('pg_restore', ['--list', filepath], {
+      env: { ...process.env, PGPASSWORD: password },
+    });
+    const verified = stdout.trim().split('\n').length > 1;
+
+    const { size } = fs.statSync(filepath);
+    res.json({ filename, size, verified, createdAt: new Date().toISOString() });
+  } catch (e) { next(e); }
+});
+
+// GET /admin/backup — liste les sauvegardes existantes
+router.get('/backup', requireSuperAdmin, async (_req, res, next) => {
+  try {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.endsWith('.dump'))
+      .map(f => {
+        const stat = fs.statSync(path.join(BACKUP_DIR, f));
+        return { filename: f, size: stat.size, createdAt: stat.birthtime.toISOString() };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    res.json(files);
+  } catch (e) { next(e); }
+});
+
+// GET /admin/backup/:filename — télécharge une sauvegarde
+router.get('/backup/:filename', requireSuperAdmin, async (req, res, next) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    if (!filename.endsWith('.dump')) return res.status(400).json({ error: 'Fichier invalide' });
+    const filepath = path.join(BACKUP_DIR, filename);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Fichier introuvable' });
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    fs.createReadStream(filepath).pipe(res);
+  } catch (e) { next(e); }
+});
+
+// DELETE /admin/backup/:filename — supprime une sauvegarde
+router.delete('/backup/:filename', requireSuperAdmin, async (req, res, next) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    if (!filename.endsWith('.dump')) return res.status(400).json({ error: 'Fichier invalide' });
+    const filepath = path.join(BACKUP_DIR, filename);
+    if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Fichier introuvable' });
+    fs.unlinkSync(filepath);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 

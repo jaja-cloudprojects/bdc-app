@@ -108,7 +108,8 @@
       color: var(--muted);
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      margin-top: 6px;
+      margin-top: 8px;
+      padding-left: 2px;
     }
 
     .sb-nav {
@@ -198,51 +199,134 @@
     .page-header {
       background: var(--sidebar);
       border-bottom: 1px solid var(--border);
-      padding: 14px 28px;
+      padding: 0 28px;
+      height: 54px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 5;
+      gap: 12px;
     }
 
-    .page-title { font-size: 16px; font-weight: 700; }
+    .page-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: .1px;
+    }
 
-    .page-body { padding: 24px 28px; }
+    .page-title-accent {
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: var(--pink);
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .page-body { padding: 22px 28px; }
 
     /* ── CARDS ──────────────────────────────────────────── */
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 22px;
+      padding: 20px 22px;
       margin-bottom: 18px;
     }
 
-    .card-title {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 16px;
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
     }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: .15px;
+    }
+
+    .card-action {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color .12s;
+    }
+
+    .card-action:hover { color: var(--pink); }
 
     /* ── STATS ──────────────────────────────────────────── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
       margin-bottom: 22px;
     }
+
+    @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 680px)  { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 18px 20px;
+      overflow: hidden;
     }
 
-    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .6px; }
-    .stat-value { font-size: 30px; font-weight: 800; color: var(--text); margin-top: 4px; }
+    .stat-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 18px 18px 16px;
+    }
+
+    .stat-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .stat-card-footer {
+      padding: 9px 18px;
+      background: var(--light);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .stat-footer-text {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color .12s;
+    }
+
+    .stat-card:hover .stat-footer-text { color: var(--pink); }
+
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
 
     /* ── TABLE ──────────────────────────────────────────── */
     .table-wrap { overflow-x: auto; }
@@ -508,6 +592,8 @@
 
     .conv-item:hover { background: var(--bg); }
     .conv-item.active { background: var(--pink-lt); }
+    .conv-item:hover .del-conv { display:flex !important; }
+    .del-conv:hover { background: var(--red-lt) !important; color: var(--red) !important; }
 
     .conv-info { flex: 1; min-width: 0; }
     .conv-name  { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -642,10 +728,10 @@
       border-radius: 0 3px 3px 0;
     }
 
-    .stat-card { transition: transform .18s ease, box-shadow .18s ease; }
+    .stat-card { transition: transform .18s ease, box-shadow .18s ease; cursor: pointer; }
     .stat-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      box-shadow: 0 6px 20px rgba(0,0,0,.07);
     }
 
     .card { transition: box-shadow .18s ease; }
@@ -729,6 +815,84 @@
     body.dark .msg-row.msg-user .msg-bubble { background: var(--card); border-color: var(--border); }
     body.dark details summary::-webkit-details-marker { color: var(--muted); }
     body.dark .sb-logo img { filter: brightness(0) invert(1); }
+
+    /* ── DASHBOARD HEADER ───────────────────────────── */
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+
+    .dash-eyebrow {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: capitalize;
+      letter-spacing: .3px;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .dash-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .dash-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .dash-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-green  { background: var(--green); }
+    .status-yellow { background: #F59E0B; }
+    .status-red    { background: var(--red); }
+
+    .dash-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--pink-lt);
+      color: var(--pink);
+      font-weight: 700;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+    }
 
     /* ── LOADING SPLASH ─────────────────────────────── */
     #loading-page {
@@ -815,37 +979,40 @@
 
     <nav class="sb-nav">
       <button class="nav-item active" data-tab="dashboard">
-        <span class="nav-icon">▦</span> Dashboard
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Dashboard
       </button>
       <button class="nav-item" data-tab="users" data-role-required="admin">
-        <span class="nav-icon">◎</span> Utilisateurs
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Utilisateurs
       </button>
       <button class="nav-item" data-tab="products">
-        <span class="nav-icon">◈</span> Produits
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></span> Produits
       </button>
       <button class="nav-item" data-tab="categories">
-        <span class="nav-icon">◉</span> Catégories
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></span> Catégories
       </button>
       <button class="nav-item" data-tab="news">
-        <span class="nav-icon">◫</span> Actualités
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> Actualités
       </button>
       <button class="nav-item" data-tab="masterclass">
-        <span class="nav-icon">◬</span> Masterclass
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></span> Masterclass
       </button>
       <button class="nav-item" data-tab="push" data-role-required="admin">
-        <span class="nav-icon">◎</span> Notifications
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span> Notifications
       </button>
       <button class="nav-item" data-tab="documents" data-role-required="admin">
-        <span class="nav-icon">◧</span> Documents
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></span> Documents
       </button>
       <button class="nav-item" data-tab="messages">
-        <span class="nav-icon">✉</span> Messages
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span> Messages
       </button>
       <button class="nav-item" data-tab="dbexplorer" data-role-required="superadmin" style="border-top:1px solid var(--border);margin-top:6px;padding-top:12px">
-        <span class="nav-icon">⊞</span> DB Explorer
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span> DB Explorer
       </button>
       <button class="nav-item" data-tab="health" data-role-required="superadmin">
-        <span class="nav-icon">♥</span> Health Check
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span> Health Check
+      </button>
+      <button class="nav-item" data-tab="backup" data-role-required="superadmin">
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span> Sauvegardes
       </button>
     </nav>
 
@@ -856,14 +1023,14 @@
         <div id="sb-user-role" style="font-size:11px;margin-top:1px"></div>
       </div>
       <button id="logoutBtn" class="btn-logout">
-        <span class="nav-icon">←</span> Déconnexion
+        <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span> Déconnexion
       </button>
     </div>
   </aside>
 
   <div id="main">
     <div class="page-header">
-      <span id="pageTitle" class="page-title">Dashboard</span>
+      <span id="pageTitle" class="page-title"><span class="page-title-accent"></span>Dashboard</span>
       <div style="display:flex;align-items:center;gap:10px">
         <button id="darkToggleBtn" onclick="toggleDarkMode()" title="Mode sombre / clair">☽</button>
         <div id="pageActions"></div>
@@ -876,13 +1043,18 @@
       <div id="tab-dashboard" class="section active">
         <div id="dash-greeting" style="margin-bottom:22px"></div>
         <div id="dash-stats" class="stats-grid" style="margin-bottom:22px"></div>
-        <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px">
+        <div style="display:grid;grid-template-columns:3fr 2fr;gap:16px">
           <div class="card">
-            <div class="card-title">Prochaines masterclasses</div>
+            <div class="card-header">
+              <div class="card-title">Prochaines masterclasses</div>
+              <span class="card-action" onclick="showTab('masterclass')">Voir tout</span>
+            </div>
             <div id="dash-mc-content"><div class="empty" style="padding:24px 0">Chargement…</div></div>
           </div>
           <div class="card">
-            <div class="card-title">Aperçu global</div>
+            <div class="card-header">
+              <div class="card-title">Aperçu global</div>
+            </div>
             <div id="dash-overview-content"></div>
           </div>
         </div>
@@ -927,11 +1099,12 @@
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Nom</th><th>Prix</th><th style="min-width:160px">Stock</th><th></th></tr></thead>
+              <thead><tr><th style="width:60px">Image</th><th>Nom</th><th>Prix</th><th style="min-width:160px">Stock</th><th></th></tr></thead>
               <tbody id="productsTbody"></tbody>
             </table>
           </div>
         </div>
+        <input type="file" id="productImgFile" accept="image/*" style="display:none" />
       </div>
 
       <!-- CATEGORIES -->
@@ -958,17 +1131,31 @@
       <!-- NEWS -->
       <div id="tab-news" class="section">
         <div class="card">
-          <div class="card-title">Nouvelle actualité</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:0">Nouvelle actualité</div>
+            <span id="newsCountBadge" style="font-size:12px;padding:3px 10px;border-radius:20px;background:var(--bg);border:1px solid var(--border);color:var(--muted)">0 / 3</span>
+          </div>
           <div class="form-group"><label class="form-label">Titre</label><input id="n_title" type="text" /></div>
           <div class="form-group"><label class="form-label">Sous-titre</label><input id="n_sub" type="text" /></div>
-          <div class="form-group"><label class="form-label">Image URL</label><input id="n_img" type="text" /></div>
+          <div class="form-group">
+            <label class="form-label">Image</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input id="n_img" type="text" placeholder="https://… ou uploadez ci-dessous" style="flex:1;min-width:160px" />
+              <label for="n_img_file" id="n_img_upload_lbl" style="cursor:pointer;padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--card);white-space:nowrap;transition:background .15s">📁 Uploader</label>
+              <input type="file" id="n_img_file" accept="image/*" style="display:none" />
+            </div>
+            <div id="n_img_preview" style="display:none;margin-top:8px">
+              <img id="n_img_preview_img" style="max-height:90px;border-radius:8px;border:1px solid var(--border);object-fit:cover" />
+              <button id="n_img_clear" style="margin-left:8px;background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:12px;vertical-align:middle" title="Supprimer l'image">✕</button>
+            </div>
+          </div>
           <div class="form-group"><label class="form-label">Corps</label><textarea id="n_body"></textarea></div>
           <button id="createNewsBtn" class="btn btn-primary">Publier</button>
         </div>
         <div class="card">
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Titre</th><th>Date</th><th></th></tr></thead>
+              <thead><tr><th style="width:60px">Image</th><th>Titre</th><th>Date</th><th></th></tr></thead>
               <tbody id="newsTbody"></tbody>
             </table>
           </div>
@@ -1250,6 +1437,38 @@
         </div>
       </div>
 
+      <!-- BACKUP -->
+      <div id="tab-backup" class="section">
+        <div class="card" style="max-width:760px;margin-bottom:16px">
+          <div class="card-header">
+            <div class="card-title">Sauvegarde de la base de données</div>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">
+            Crée une sauvegarde complète au format <strong>pg_dump custom</strong> — toutes les tables, données et relations.
+            La sauvegarde est vérifiée automatiquement après création.
+          </p>
+          <button id="runBackupBtn" class="btn btn-primary" onclick="createBackup()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Créer une sauvegarde
+          </button>
+          <div id="backupProgress" class="hidden" style="margin-top:14px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)">
+            <div style="width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--pink);border-radius:50%;animation:splash-spin .75s linear infinite;flex-shrink:0"></div>
+            Sauvegarde en cours…
+          </div>
+        </div>
+
+        <div class="card" style="max-width:760px">
+          <div class="card-header">
+            <div class="card-title">Sauvegardes disponibles</div>
+            <button class="btn btn-secondary btn-sm" onclick="loadBackups()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Actualiser
+            </button>
+          </div>
+          <div id="backupList"><div class="empty">Chargement…</div></div>
+        </div>
+      </div>
+
     </div><!-- /page-body -->
   </div><!-- /main -->
 
@@ -1315,6 +1534,16 @@
       <span class="modal-title">Nouvel utilisateur</span>
       <button class="modal-close" data-close="userModal">✕</button>
     </div>
+    <label style="display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;user-select:none;font-size:13px;font-weight:500;color:var(--muted);padding:8px 12px;background:var(--light);border:1px solid var(--border);border-radius:8px;width:100%;transition:border-color .12s">
+      <input type="checkbox" id="u_test"
+        onchange="(function(cb){
+          var f=document.getElementById('u_first');
+          if(cb.checked){ f.value='(TEST)'; f.disabled=true; }
+          else { f.value=''; f.disabled=false; f.focus(); }
+        })(this)"
+        style="width:15px;height:15px;accent-color:var(--pink);cursor:pointer;flex-shrink:0" />
+      Compte de test <span style="font-size:11px;color:var(--muted);font-weight:400">— prénom remplacé par "(TEST)"</span>
+    </label>
     <div class="form-row">
       <div class="form-group"><label class="form-label">Prénom</label><input id="u_first" type="text" autocomplete="off" /></div>
       <div class="form-group"><label class="form-label">Nom</label><input id="u_last" type="text" autocomplete="off" /></div>
@@ -1451,6 +1680,20 @@ function formatValidationIssues(issues) {
   }).join(' ');
 }
 
+/* ── Image upload (multipart) ───────────────────────── */
+async function uploadImageFile(endpoint, file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(API + endpoint, {
+    method: 'POST',
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
+    body: formData,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'Erreur upload');
+  return json;
+}
+
 /* ── Toast ─────────────────────────────────────────── */
 let _toastTimer;
 function toast(msg, type = 'ok') {
@@ -1476,7 +1719,7 @@ const TITLES = {
   dashboard: 'Dashboard', users: 'Utilisateurs', products: 'Produits',
   categories: 'Catégories', news: 'Actualités', masterclass: 'Masterclass',
   push: 'Notifications', documents: 'Documents', messages: 'Messages',
-  dbexplorer: 'DB Explorer', health: 'Health Check',
+  dbexplorer: 'DB Explorer', health: 'Health Check', backup: 'Sauvegardes',
 };
 
 const LOADERS = {
@@ -1491,6 +1734,7 @@ const LOADERS = {
   messages: loadConversations,
   dbexplorer: loadDbTables,
   health: () => {},
+  backup: loadBackups,
 };
 
 function showTab(tab) {
@@ -1506,7 +1750,7 @@ function showTab(tab) {
   document.getElementById('tab-' + tab)?.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === tab));
-  document.getElementById('pageTitle').textContent = TITLES[tab] || tab;
+  document.getElementById('pageTitle').innerHTML = `<span class="page-title-accent"></span>${TITLES[tab] || tab}`;
 
   const actions = document.getElementById('pageActions');
   actions.innerHTML = tab === 'users'
@@ -1593,20 +1837,25 @@ function renderDashboard(stats, masterclasses) {
   const greetingEl = document.getElementById('dash-greeting');
   if (greetingEl) {
     const u = _adminUser;
-    const roleLabels = { STUDENT: 'Élève', FORMATRICE: 'Formatrice', ADMIN: 'Administrateur', SUPER_ADMIN: 'SuperAdmin' };
+    const roleLabels = { STUDENT: 'Élève', FORMATRICE: 'Formatrice', ADMIN: 'Administrateur', SUPER_ADMIN: 'Super Admin' };
+    const roleBadgeClass = { STUDENT: 'badge-student', FORMATRICE: 'badge-formatrice', ADMIN: 'badge-admin', SUPER_ADMIN: 'badge-superadmin' };
     const dateStr = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const avatarInner = u?.avatarUrl
-      ? `<img src="${escHtml(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
-      : `<span style="font-size:22px;font-weight:700;color:#fff">${u ? u.firstName.charAt(0).toUpperCase() : '?'}</span>`;
+      ? `<img src="${escHtml(u.avatarUrl)}" style="width:100%;height:100%;object-fit:cover">`
+      : (u ? escHtml(u.firstName.charAt(0).toUpperCase()) : '?');
     greetingEl.innerHTML = `
-      <div style="background:linear-gradient(135deg,#E8586E 0%,#c03050 100%);border-radius:18px;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;color:#fff;box-shadow:0 6px 28px rgba(232,88,110,.28)">
+      <div class="dash-header">
         <div>
-          <div style="font-size:12px;opacity:.75;margin-bottom:6px;text-transform:capitalize;letter-spacing:.2px">${dateStr}</div>
-          <div style="font-size:26px;font-weight:800;margin-bottom:8px">Bonjour, ${u ? escHtml(u.firstName) : ''} !</div>
-          <span style="display:inline-flex;align-items:center;background:rgba(255,255,255,.2);padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.3px">${roleLabels[u?.role] || (u?.role ?? '')}</span>
+          <div class="dash-eyebrow">${dateStr}</div>
+          <div class="dash-title">Bonjour, ${u ? escHtml(u.firstName) : ''}</div>
+          <span class="badge ${roleBadgeClass[u?.role] || 'badge-student'}">${roleLabels[u?.role] || (u?.role ?? '')}</span>
         </div>
-        <div style="width:62px;height:62px;border-radius:50%;border:3px solid rgba(255,255,255,.4);overflow:hidden;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          ${avatarInner}
+        <div class="dash-header-right">
+          <div class="dash-status-pill">
+            <span class="status-dot status-green"></span>
+            Système opérationnel
+          </div>
+          <div class="dash-avatar">${avatarInner}</div>
         </div>
       </div>`;
   }
@@ -1618,18 +1867,19 @@ function renderDashboard(stats, masterclasses) {
       const val = stats
         ? (d.id === 's-users' ? stats.users : d.id === 's-products' ? stats.products : d.id === 's-mc' ? stats.upcomingMasterclass : d.id === 's-res' ? stats.reservations : stats.pushTokens)
         : '—';
-      return `<div class="stat-card" onclick="showTab('${d.tab}')"
-        style="border-top:3px solid ${d.color};cursor:pointer"
-        onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.08)'"
-        onmouseout="this.style.boxShadow=''">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      return `<div class="stat-card" onclick="showTab('${d.tab}')">
+        <div class="stat-card-top">
           <div>
             <div class="stat-label">${d.label}</div>
             <div class="stat-value" id="${d.id}" style="color:${d.color}">${val ?? '—'}</div>
           </div>
-          <div style="width:36px;height:36px;border-radius:10px;background:${d.bg};display:flex;align-items:center;justify-content:center;color:${d.color};flex-shrink:0;margin-top:2px">
+          <div class="stat-icon-wrap" style="background:${d.bg};color:${d.color}">
             ${d.icon}
           </div>
+        </div>
+        <div class="stat-card-footer">
+          <span class="stat-footer-text">Voir ${d.label.toLowerCase()}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--border)"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </div>`;
     }).join('');
@@ -1646,13 +1896,17 @@ function renderDashboard(stats, masterclasses) {
         const total    = m.capacity ?? 0;
         const pct      = total > 0 ? Math.round((reserved / total) * 100) : 0;
         const barColor = pct >= 90 ? '#ef4444' : pct >= 60 ? '#E8586E' : '#3B82F6';
-        return `<div style="margin-bottom:18px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
-            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%">${escHtml(m.title)}</div>
-            <div style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${reserved} / ${total} &nbsp;·&nbsp; ${fmt(m.date)}</div>
+        const badgeBg  = pct >= 90 ? 'rgba(239,68,68,.1)' : pct >= 60 ? 'rgba(232,88,110,.1)' : 'rgba(59,130,246,.1)';
+        return `<div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px">
+            <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${escHtml(m.title)}</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <span style="font-size:11px;color:var(--muted)">${fmt(m.date)}</span>
+              <span style="display:inline-flex;padding:2px 8px;border-radius:6px;background:${badgeBg};color:${barColor};font-size:11px;font-weight:700">${reserved}/${total}</span>
+            </div>
           </div>
-          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .9s cubic-bezier(.4,0,.2,1)"></div>
+          <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .9s cubic-bezier(.4,0,.2,1)"></div>
           </div>
         </div>`;
       }).join('');
@@ -1684,7 +1938,7 @@ function renderDashboard(stats, masterclasses) {
 
     ovEl.innerHTML =
       donut(fillPct, '#E8586E', 'Places réservées',    `${usedSlots} / ${totalSlots} au total`) +
-      donut(pushPct, '#3B82F6', 'Adoption push',        `${stats.pushTokens} appareils enregistrés`) +
+      donut(pushPct, '#3B82F6', 'Notifications activées',        `${stats.pushTokens} appareils enregistrés`) +
       `<div style="padding:14px 0 2px;font-size:12px;color:var(--muted)">${stats.users} utilisateur${stats.users > 1 ? 's' : ''} · ${stats.products} produit${stats.products > 1 ? 's' : ''}</div>`;
   }
 }
@@ -1916,7 +2170,7 @@ async function loadProducts() {
   try {
     const list = await req('/products');
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="4"><div class="empty">Aucun produit.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty">Aucun produit.</div></td></tr>';
       return;
     }
     tbody.innerHTML = list.map(p => {
@@ -1927,8 +2181,18 @@ async function loadProducts() {
             ? `<span style="background:#f0fdf4;color:#16a34a;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:700">${p.stock} en stock</span>`
             : `<span style="background:#fef2f2;color:#dc2626;font-size:11px;padding:2px 8px;border-radius:12px;font-weight:700">Épuisé</span>`)
         : `<span style="background:var(--bg);color:var(--muted);font-size:11px;padding:2px 8px;border-radius:12px">Non suivi</span>`;
+      const imgCell = p.imageUrl
+        ? `<div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+             <img src="${escHtml(p.imageUrl)}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" />
+             <div style="display:flex;gap:4px">
+               <label title="Changer l'image" style="cursor:pointer;font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px" class="prod-img-upload-lbl" data-id="${p.id}">✎</label>
+               <button title="Supprimer l'image" style="font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 6px;cursor:pointer" class="del-product-img" data-id="${p.id}">✕</button>
+             </div>
+           </div>`
+        : `<label title="Uploader une image" style="cursor:pointer;width:44px;height:44px;border-radius:6px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--muted)" class="prod-img-upload-lbl" data-id="${p.id}">+</label>`;
       return `<tr>
-        <td style="font-weight:500">${p.name}</td>
+        <td style="text-align:center">${imgCell}</td>
+        <td style="font-weight:500">${escHtml(p.name)}</td>
         <td>${p.price} €</td>
         <td>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1943,7 +2207,7 @@ async function loadProducts() {
       </tr>`;
     }).join('');
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">${e.message}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">${e.message}</div></td></tr>`;
   }
 }
 
@@ -1990,15 +2254,31 @@ async function loadNews() {
   const tbody = document.getElementById('newsTbody');
   try {
     const list = await req('/news');
+    // Update count badge
+    const badge = document.getElementById('newsCountBadge');
+    if (badge) {
+      badge.textContent = `${list.length} / 3`;
+      badge.style.background = list.length >= 3 ? 'rgba(239,68,68,.12)' : 'var(--bg)';
+      badge.style.color = list.length >= 3 ? 'var(--red)' : 'var(--muted)';
+      badge.style.borderColor = list.length >= 3 ? 'var(--red)' : 'var(--border)';
+    }
+    const createBtn = document.getElementById('createNewsBtn');
+    if (createBtn) createBtn.disabled = list.length >= 3;
     tbody.innerHTML = list.length
-      ? list.map(n => `<tr>
-          <td>${n.title}</td>
-          <td style="color:var(--muted);font-size:12.5px">${fmt(n.publishedAt)}</td>
-          <td><button class="btn btn-danger btn-sm del-news" data-id="${n.id}">Supprimer</button></td>
-        </tr>`).join('')
-      : '<tr><td colspan="3"><div class="empty">Aucune actualité.</div></td></tr>';
+      ? list.map(n => {
+          const thumb = n.imageUrl
+            ? `<img src="${escHtml(n.imageUrl)}" style="width:48px;height:27px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" />`
+            : `<div style="width:48px;height:27px;border-radius:4px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px">🖼</div>`;
+          return `<tr>
+            <td>${thumb}</td>
+            <td style="font-weight:500">${escHtml(n.title)}</td>
+            <td style="color:var(--muted);font-size:12.5px">${fmt(n.publishedAt)}</td>
+            <td><button class="btn btn-danger btn-sm del-news" data-id="${n.id}">Supprimer</button></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4"><div class="empty">Aucune actualité.</div></td></tr>';
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="3"><div class="empty">${e.message}</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">${e.message}</div></td></tr>`;
   }
 }
 
@@ -2124,7 +2404,7 @@ async function loadConversations() {
       const dot     = unread ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--pink);flex-shrink:0;margin-top:5px"></span>' : '';
       const nameW   = unread ? 'font-weight:700;color:var(--text)' : '';
       const prevCol = unread ? 'color:var(--text)' : '';
-      return `<div class="conv-item${active}" data-conv-id="${c.id}">
+      return `<div class="conv-item${active}" data-conv-id="${c.id}" style="position:relative">
         <div class="avatar">${initials}</div>
         <div class="conv-info">
           <div class="conv-name" style="${nameW}">${escHtml(c.user.firstName)} ${escHtml(c.user.lastName)}</div>
@@ -2134,6 +2414,7 @@ async function loadConversations() {
           <div class="conv-time">${time}</div>
           ${dot}
         </div>
+        <button class="del-conv" data-conv-id="${c.id}" title="Supprimer" style="position:absolute;top:6px;right:6px;width:18px;height:18px;border:none;background:transparent;cursor:pointer;display:none;align-items:center;justify-content:center;border-radius:50%;color:var(--muted);font-size:12px;line-height:1;padding:0">✕</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -2174,7 +2455,13 @@ async function loadChatThread(convId) {
           <div class="chat-panel-email">${escHtml(data.user.email)}</div>
         </div>
       </div>
-      <button onclick="clearDashboardChat('${convId}')" title="Vider l'affichage côté dashboard" style="flex-shrink:0;padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap" onmouseover="this.style.color='var(--red)';this.style.borderColor='var(--red)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Vider l'affichage</button>`;
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <button onclick="clearDashboardChat('${convId}')" title="Vider l'affichage côté dashboard" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;transition:color .12s,border-color .12s" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--muted)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Vider l'affichage</button>
+        <button onclick="deleteConversation('${convId}')" title="Supprimer la conversation pour les deux parties" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--red-lt);border-radius:6px;background:var(--red-lt);color:var(--red);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .12s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Supprimer pour tous
+        </button>
+      </div>`;
 
     const clearedAt = parseInt(localStorage.getItem('chat_cleared_dash_' + convId) || '0', 10);
     const filteredMessages = data.messages.filter(m => new Date(m.createdAt).getTime() > clearedAt);
@@ -2303,6 +2590,21 @@ async function startConversation(userId) {
     document.getElementById('newConvSearch').value = '';
     await loadConversations();
     openConversation(id);
+  } catch(e) {
+    toast(e.message, 'err');
+  }
+}
+
+async function deleteConversation(convId) {
+  if (!confirm('Supprimer cette conversation pour les deux parties ?\n\nTous les messages seront définitivement effacés pour l\'élève et pour l\'administration.')) return;
+  try {
+    await req('/admin/conversations/' + convId, { method: 'DELETE' });
+    if (_activeConvId === convId) {
+      _activeConvId = null;
+      document.getElementById('chatView').classList.add('hidden');
+      document.getElementById('noConvSelected').classList.remove('hidden');
+    }
+    await loadConversations();
   } catch(e) {
     toast(e.message, 'err');
   }
@@ -2479,10 +2781,18 @@ document.addEventListener('click', async e => {
 
   // Logout
   if (e.target.id === 'logoutBtn') {
-    localStorage.removeItem('bdc_admin_token');
-    localStorage.removeItem('bdc_admin_refresh');
-    token = null; refreshToken = null;
-    location.reload();
+    // Loader de déconnexion
+    const splash = document.getElementById('loading-page');
+    if (splash) {
+      splash.classList.remove('hidden');
+      splash.style.opacity = '1';
+    }
+    setTimeout(() => {
+      localStorage.removeItem('bdc_admin_token');
+      localStorage.removeItem('bdc_admin_refresh');
+      token = null; refreshToken = null;
+      location.reload();
+    }, 600);
     return;
   }
 
@@ -2501,8 +2811,9 @@ document.addEventListener('click', async e => {
 
   // New user button (dynamically rendered in header)
   if (e.target.id === 'newUserBtn') {
-    ['u_first','u_last','u_email','u_pw'].forEach(id => document.getElementById(id).value = '');
+    ['u_first','u_last','u_email','u_pw'].forEach(id => { const el = document.getElementById(id); el.value = ''; el.disabled = false; });
     document.getElementById('u_role').value = 'STUDENT';
+    document.getElementById('u_test').checked = false;
     document.getElementById('userModalErr').classList.add('hidden');
     openModal('userModal');
     return;
@@ -2557,6 +2868,39 @@ document.addEventListener('click', async e => {
       toast('Utilisateur supprimé.');
       loadUsers();
     } catch(e) { toast(e.message, 'err'); }
+    return;
+  }
+
+  // Product image upload (click on dashed + or pencil label)
+  const prodImgLbl = e.target.closest('.prod-img-upload-lbl');
+  if (prodImgLbl) {
+    const fileInput = document.getElementById('productImgFile');
+    fileInput.dataset.productId = prodImgLbl.dataset.id;
+    fileInput.click();
+    return;
+  }
+
+  // Product image delete
+  const delProdImg = e.target.closest('.del-product-img');
+  if (delProdImg) {
+    if (!confirm('Supprimer l\'image de ce produit ?')) return;
+    try {
+      await req('/admin/products/' + delProdImg.dataset.id + '/image', { method: 'DELETE' });
+      toast('Image supprimée.');
+      loadProducts();
+    } catch(e) { toast(e.message, 'err'); }
+    return;
+  }
+
+  // News image clear button
+  if (e.target.id === 'n_img_clear') {
+    document.getElementById('n_img').value = '';
+    document.getElementById('n_img_preview').style.display = 'none';
+    document.getElementById('n_img_preview_img').src = '';
+    const lbl = document.getElementById('n_img_upload_lbl');
+    lbl.textContent = '📁 Uploader';
+    lbl.style.color = '';
+    lbl.style.opacity = '';
     return;
   }
 
@@ -2676,6 +3020,12 @@ document.addEventListener('click', async e => {
         imageUrl: document.getElementById('n_img').value || undefined,
         body:     document.getElementById('n_body').value || undefined,
       })});
+      // Reset form
+      ['n_title','n_sub','n_img','n_body'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      document.getElementById('n_img_preview').style.display = 'none';
+      document.getElementById('n_img_preview_img').src = '';
+      const lbl = document.getElementById('n_img_upload_lbl');
+      if(lbl) { lbl.textContent = '📁 Uploader'; lbl.style.color = ''; lbl.style.opacity = ''; }
       toast('Actualité publiée.');
       loadNews();
     } catch(e) { toast(e.message, 'err'); }
@@ -2863,6 +3213,14 @@ document.addEventListener('click', async e => {
   const newConvUser = e.target.closest('.new-conv-user');
   if (newConvUser) { startConversation(newConvUser.dataset.id); return; }
 
+  // Delete conversation
+  const delBtn = e.target.closest('.del-conv[data-conv-id]');
+  if (delBtn) {
+    e.stopPropagation();
+    deleteConversation(delBtn.dataset.convId);
+    return;
+  }
+
   // Open conversation
   const convItem = e.target.closest('.conv-item[data-conv-id]');
   if (convItem) { openConversation(convItem.dataset.convId); return; }
@@ -3044,7 +3402,50 @@ document.addEventListener('input', e => {
 });
 
 /* ── Campaign form interactivity ───────────────────── */
-document.addEventListener('change', e => {
+document.addEventListener('change', async e => {
+  // News image upload
+  if (e.target.id === 'n_img_file') {
+    const file = e.target.files[0];
+    if (!file) return;
+    const lbl = document.getElementById('n_img_upload_lbl');
+    lbl.textContent = '⏳ Upload…';
+    lbl.style.opacity = '0.6';
+    try {
+      const { url } = await uploadImageFile('/admin/news/upload-image', file);
+      document.getElementById('n_img').value = url;
+      const preview = document.getElementById('n_img_preview');
+      document.getElementById('n_img_preview_img').src = url;
+      preview.style.display = 'block';
+      lbl.textContent = '✓ Uploadée';
+      lbl.style.color = 'var(--green, #16a34a)';
+    } catch(err) {
+      toast(err.message, 'err');
+      lbl.textContent = '📁 Uploader';
+      lbl.style.opacity = '';
+    } finally {
+      e.target.value = '';
+    }
+    return;
+  }
+
+  // Product image upload
+  if (e.target.id === 'productImgFile') {
+    const file = e.target.files[0];
+    const productId = e.target.dataset.productId;
+    if (!file || !productId) return;
+    e.target.dataset.productId = '';
+    try {
+      await uploadImageFile(`/admin/products/${productId}/upload-image`, file);
+      toast('Image mise à jour.');
+      loadProducts();
+    } catch(err) {
+      toast(err.message, 'err');
+    } finally {
+      e.target.value = '';
+    }
+    return;
+  }
+
   // Toggle once/recurring fields
   if (e.target.name === 'camp_type') {
     const isRecurring = document.getElementById('camp_type_recurring').checked;
@@ -3076,6 +3477,100 @@ _syncDarkBtn(document.body.classList.contains('dark'));
 
 // Auto-login
 if (token) boot();
+
+// ── BACKUP ───────────────────────────────────────────────────────────────────
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' o';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' Mo';
+}
+
+function fmtAge(isoDate) {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'à l\'instant';
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `il y a ${h}h`;
+  return `il y a ${Math.floor(h / 24)}j`;
+}
+
+async function loadBackups() {
+  const el = document.getElementById('backupList');
+  if (!el) return;
+  el.innerHTML = '<div class="empty">Chargement…</div>';
+  try {
+    const list = await req('/admin/backup');
+    if (!list.length) {
+      el.innerHTML = '<div class="empty">Aucune sauvegarde disponible.</div>';
+      return;
+    }
+    el.innerHTML = list.map(b => `
+      <div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(59,130,246,.1);color:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(b.filename)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${fmtSize(b.size)} · ${fmtAge(b.createdAt)}</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <a href="/api/v1/admin/backup/${encodeURIComponent(b.filename)}" download
+             style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:var(--blue-lt);color:var(--blue);font-size:12px;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:opacity .12s"
+             onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Télécharger
+          </a>
+          <button onclick="deleteBackup('${escHtml(b.filename)}')"
+            style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;background:var(--red-lt);color:var(--red);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:opacity .12s"
+            onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Supprimer
+          </button>
+        </div>
+      </div>`).join('');
+    // Retire le border-bottom du dernier élément
+    const rows = el.querySelectorAll('[style*="border-bottom"]');
+    if (rows.length) rows[rows.length - 1].style.borderBottom = 'none';
+  } catch (e) {
+    el.innerHTML = `<div class="empty" style="color:var(--red)">Erreur : ${escHtml(String(e))}</div>`;
+  }
+}
+
+async function createBackup() {
+  const btn  = document.getElementById('runBackupBtn');
+  const prog = document.getElementById('backupProgress');
+  if (!btn || !prog) return;
+  btn.disabled = true;
+  prog.classList.remove('hidden');
+  prog.style.display = 'flex';
+  try {
+    const result = await req('/admin/backup', { method: 'POST' });
+    const status = result.verified
+      ? `<span style="color:var(--green);font-weight:600">✔ Vérifiée</span>`
+      : `<span style="color:var(--yellow);font-weight:600">⚠ Non vérifiée</span>`;
+    showToast(`Sauvegarde créée — ${fmtSize(result.size)} ${result.verified ? '· vérifiée ✔' : ''}`, 'ok');
+    await loadBackups();
+  } catch (e) {
+    showToast('Erreur lors de la sauvegarde : ' + String(e), 'err');
+  } finally {
+    btn.disabled = false;
+    prog.classList.add('hidden');
+    prog.style.display = '';
+  }
+}
+
+async function deleteBackup(filename) {
+  if (!confirm(`Supprimer la sauvegarde "${filename}" ?\nCette action est irréversible.`)) return;
+  try {
+    await req('/admin/backup/' + encodeURIComponent(filename), { method: 'DELETE' });
+    showToast('Sauvegarde supprimée.', 'ok');
+    await loadBackups();
+  } catch (e) {
+    showToast('Erreur : ' + String(e), 'err');
+  }
+}
 </script>
 
 </body>
